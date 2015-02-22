@@ -108,42 +108,30 @@ fn id_ext(str: &str) -> ast::Ident {
 }
 
 // Lift an ident to the expr that evaluates to that ident.
-fn mk_ident(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx);
-
+fn mk_ident(builder: &builder::AstBuilder, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
     builder.expr().span(sp).method_call("ident_of").id("ext_cx")
         .arg().str(ident)
         .build()
 }
 
 // Lift a name to the expr that evaluates to that name
-fn mk_name(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx);
-
+fn mk_name(builder: &builder::AstBuilder, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
     builder.expr().span(sp).method_call("name_of").id("ext_cx")
         .arg().str(ident)
         .build()
 }
 
-fn mk_ast_path(cx: &ExtCtxt, sp: Span, name: &str) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx);
-
+fn mk_ast_path(builder: &builder::AstBuilder, sp: Span, name: &str) -> P<ast::Expr> {
     builder.expr().span(sp).path().global()
         .build_from_ids(&["syntax", "ast", name])
 }
 
-fn mk_token_path(cx: &ExtCtxt, sp: Span, name: &str) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx);
-
+fn mk_token_path(builder: &builder::AstBuilder, sp: Span, name: &str) -> P<ast::Expr> {
     builder.expr().span(sp).path().global()
         .build_from_ids(&["syntax", "parse", "token", name])
 }
 
-fn mk_binop(cx: &ExtCtxt, sp: Span, bop: token::BinOpToken) -> P<ast::Expr> {
+fn mk_binop(builder: &builder::AstBuilder, sp: Span, bop: token::BinOpToken) -> P<ast::Expr> {
     let name = match bop {
         token::Plus     => "Plus",
         token::Minus    => "Minus",
@@ -156,152 +144,185 @@ fn mk_binop(cx: &ExtCtxt, sp: Span, bop: token::BinOpToken) -> P<ast::Expr> {
         token::Shl      => "Shl",
         token::Shr      => "Shr"
     };
-    mk_token_path(cx, sp, name)
+    mk_token_path(builder, sp, name)
 }
 
-fn mk_delim(cx: &ExtCtxt, sp: Span, delim: token::DelimToken) -> P<ast::Expr> {
+fn mk_delim(builder: &builder::AstBuilder, sp: Span, delim: token::DelimToken) -> P<ast::Expr> {
     let name = match delim {
         token::Paren     => "Paren",
         token::Bracket   => "Bracket",
         token::Brace     => "Brace",
     };
-    mk_token_path(cx, sp, name)
+    mk_token_path(builder, sp, name)
 }
 
 #[allow(non_upper_case_globals)]
 fn mk_token(cx: &ExtCtxt, sp: Span, tok: &token::Token) -> P<ast::Expr> {
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
     macro_rules! mk_lit {
         ($name: expr, $suffix: expr, $($args: expr),*) => {{
-            let inner = cx.expr_call(sp, mk_token_path(cx, sp, $name), vec![$($args),*]);
+            let inner = cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, $name),
+                vec![$($args),*]);
+
             let suffix = match $suffix {
-                Some(name) => cx.expr_some(sp, mk_name(cx, sp, ast::Ident::new(name))),
-                None => cx.expr_none(sp)
+                Some(name) => {
+                    cx.expr_some(
+                        sp,
+                        mk_name(&builder, sp, ast::Ident::new(name)))
+                }
+                None => {
+                    cx.expr_none(sp)
+                }
             };
-            cx.expr_call(sp, mk_token_path(cx, sp, "Literal"), vec![inner, suffix])
+
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "Literal"),
+                vec![inner, suffix])
         }}
     }
+
     match *tok {
         token::BinOp(binop) => {
-            return cx.expr_call(sp, mk_token_path(cx, sp, "BinOp"), vec!(mk_binop(cx, sp, binop)));
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "BinOp"),
+                vec!(mk_binop(&builder, sp, binop)))
         }
         token::BinOpEq(binop) => {
-            return cx.expr_call(sp, mk_token_path(cx, sp, "BinOpEq"),
-                                vec!(mk_binop(cx, sp, binop)));
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "BinOpEq"),
+                vec!(mk_binop(&builder, sp, binop)))
         }
 
         token::OpenDelim(delim) => {
-            return cx.expr_call(sp, mk_token_path(cx, sp, "OpenDelim"),
-                                vec![mk_delim(cx, sp, delim)]);
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "OpenDelim"),
+                vec![mk_delim(&builder, sp, delim)])
         }
         token::CloseDelim(delim) => {
-            return cx.expr_call(sp, mk_token_path(cx, sp, "CloseDelim"),
-                                vec![mk_delim(cx, sp, delim)]);
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "CloseDelim"),
+                vec![mk_delim(&builder, sp, delim)])
         }
 
         token::Literal(token::Byte(i), suf) => {
-            let e_byte = mk_name(cx, sp, i.ident());
-            return mk_lit!("Byte", suf, e_byte);
+            let e_byte = mk_name(&builder, sp, i.ident());
+            mk_lit!("Byte", suf, e_byte)
         }
 
         token::Literal(token::Char(i), suf) => {
-            let e_char = mk_name(cx, sp, i.ident());
-            return mk_lit!("Char", suf, e_char);
+            let e_char = mk_name(&builder, sp, i.ident());
+            mk_lit!("Char", suf, e_char)
         }
 
         token::Literal(token::Integer(i), suf) => {
-            let e_int = mk_name(cx, sp, i.ident());
-            return mk_lit!("Integer", suf, e_int);
+            let e_int = mk_name(&builder, sp, i.ident());
+            mk_lit!("Integer", suf, e_int)
         }
 
         token::Literal(token::Float(fident), suf) => {
-            let e_fident = mk_name(cx, sp, fident.ident());
-            return mk_lit!("Float", suf, e_fident);
+            let e_fident = mk_name(&builder, sp, fident.ident());
+            mk_lit!("Float", suf, e_fident)
         }
 
         token::Literal(token::Str_(ident), suf) => {
-            return mk_lit!("Str_", suf, mk_name(cx, sp, ident.ident()))
+            mk_lit!("Str_", suf, mk_name(&builder, sp, ident.ident()))
         }
 
         token::Literal(token::StrRaw(ident, n), suf) => {
-            return mk_lit!("StrRaw", suf, mk_name(cx, sp, ident.ident()), cx.expr_usize(sp, n))
+            mk_lit!(
+                "StrRaw",
+                suf,
+                mk_name(&builder, sp, ident.ident()), cx.expr_usize(sp, n))
         }
 
         token::Ident(ident, style) => {
-            return cx.expr_call(sp,
-                                mk_token_path(cx, sp, "Ident"),
-                                vec![mk_ident(cx, sp, ident),
-                                     match style {
-                                        ModName => mk_token_path(cx, sp, "ModName"),
-                                        Plain   => mk_token_path(cx, sp, "Plain"),
-                                     }]);
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "Ident"),
+                vec![mk_ident(&builder, sp, ident),
+                match style {
+                    ModName => mk_token_path(&builder, sp, "ModName"),
+                    Plain   => mk_token_path(&builder, sp, "Plain"),
+                }])
         }
 
         token::Lifetime(ident) => {
-            return cx.expr_call(sp,
-                                mk_token_path(cx, sp, "Lifetime"),
-                                vec!(mk_ident(cx, sp, ident)));
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "Lifetime"),
+                vec!(mk_ident(&builder, sp, ident)))
         }
 
         token::DocComment(ident) => {
-            return cx.expr_call(sp,
-                                mk_token_path(cx, sp, "DocComment"),
-                                vec!(mk_name(cx, sp, ident.ident())));
+            cx.expr_call(
+                sp,
+                mk_token_path(&builder, sp, "DocComment"),
+                vec!(mk_name(&builder, sp, ident.ident())))
         }
 
-        token::Interpolated(_) => panic!("quote! with interpolated token"),
+        token::Eq           => mk_token_path(&builder, sp, "Eq"),
+        token::Lt           => mk_token_path(&builder, sp, "Lt"),
+        token::Le           => mk_token_path(&builder, sp, "Le"),
+        token::EqEq         => mk_token_path(&builder, sp, "EqEq"),
+        token::Ne           => mk_token_path(&builder, sp, "Ne"),
+        token::Ge           => mk_token_path(&builder, sp, "Ge"),
+        token::Gt           => mk_token_path(&builder, sp, "Gt"),
+        token::AndAnd       => mk_token_path(&builder, sp, "AndAnd"),
+        token::OrOr         => mk_token_path(&builder, sp, "OrOr"),
+        token::Not          => mk_token_path(&builder, sp, "Not"),
+        token::Tilde        => mk_token_path(&builder, sp, "Tilde"),
+        token::At           => mk_token_path(&builder, sp, "At"),
+        token::Dot          => mk_token_path(&builder, sp, "Dot"),
+        token::DotDot       => mk_token_path(&builder, sp, "DotDot"),
+        token::Comma        => mk_token_path(&builder, sp, "Comma"),
+        token::Semi         => mk_token_path(&builder, sp, "Semi"),
+        token::Colon        => mk_token_path(&builder, sp, "Colon"),
+        token::ModSep       => mk_token_path(&builder, sp, "ModSep"),
+        token::RArrow       => mk_token_path(&builder, sp, "RArrow"),
+        token::LArrow       => mk_token_path(&builder, sp, "LArrow"),
+        token::FatArrow     => mk_token_path(&builder, sp, "FatArrow"),
+        token::Pound        => mk_token_path(&builder, sp, "Pound"),
+        token::Dollar       => mk_token_path(&builder, sp, "Dollar"),
+        token::Underscore   => mk_token_path(&builder, sp, "Underscore"),
+        token::Eof          => mk_token_path(&builder, sp, "Eof"),
 
-        _ => ()
+        _ => panic!("quote! with {:?} token", tok),
     }
-
-    let name = match *tok {
-        token::Eq           => "Eq",
-        token::Lt           => "Lt",
-        token::Le           => "Le",
-        token::EqEq         => "EqEq",
-        token::Ne           => "Ne",
-        token::Ge           => "Ge",
-        token::Gt           => "Gt",
-        token::AndAnd       => "AndAnd",
-        token::OrOr         => "OrOr",
-        token::Not          => "Not",
-        token::Tilde        => "Tilde",
-        token::At           => "At",
-        token::Dot          => "Dot",
-        token::DotDot       => "DotDot",
-        token::Comma        => "Comma",
-        token::Semi         => "Semi",
-        token::Colon        => "Colon",
-        token::ModSep       => "ModSep",
-        token::RArrow       => "RArrow",
-        token::LArrow       => "LArrow",
-        token::FatArrow     => "FatArrow",
-        token::Pound        => "Pound",
-        token::Dollar       => "Dollar",
-        token::Underscore   => "Underscore",
-        token::Eof          => "Eof",
-        _                   => panic!(),
-    };
-    mk_token_path(cx, sp, name)
 }
 
 fn mk_tt(cx: &ExtCtxt, tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
     match *tt {
         ast::TtToken(sp, SubstNt(ident, _)) => {
             // tt.extend($ident.to_tokens(ext_cx).into_iter())
 
-            let e_to_toks =
-                cx.expr_method_call(sp,
-                                    cx.expr_ident(sp, ident),
-                                    id_ext("to_tokens"),
-                                    vec!(cx.expr_ident(sp, id_ext("ext_cx"))));
-            let e_to_toks =
-                cx.expr_method_call(sp, e_to_toks, id_ext("into_iter"), vec![]);
+            let e_to_toks = cx.expr_method_call(
+                sp,
+                cx.expr_ident(sp, ident),
+                id_ext("to_tokens"),
+                vec!(cx.expr_ident(sp, id_ext("ext_cx"))));
 
-            let e_push =
-                cx.expr_method_call(sp,
-                                    cx.expr_ident(sp, id_ext("tt")),
-                                    id_ext("extend"),
-                                    vec!(e_to_toks));
+            let e_to_toks = cx.expr_method_call(
+                sp,
+                e_to_toks,
+                id_ext("into_iter"), vec![]);
+
+            let e_push = cx.expr_method_call(
+                sp,
+                cx.expr_ident(sp, id_ext("tt")),
+                id_ext("extend"),
+                vec!(e_to_toks));
 
             vec!(cx.stmt_expr(e_push))
         }
@@ -314,18 +335,25 @@ fn mk_tt(cx: &ExtCtxt, tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
         }
         ast::TtToken(sp, ref tok) => {
             let e_sp = cx.expr_ident(sp, id_ext("_sp"));
-            let e_tok = cx.expr_call(sp,
-                                     mk_ast_path(cx, sp, "TtToken"),
-                                     vec!(e_sp, mk_token(cx, sp, tok)));
-            let e_push =
-                cx.expr_method_call(sp,
-                                    cx.expr_ident(sp, id_ext("tt")),
-                                    id_ext("push"),
-                                    vec!(e_tok));
+
+            let e_tok = cx.expr_call(
+                sp,
+                mk_ast_path(&builder, sp, "TtToken"),
+                vec!(e_sp, mk_token(cx, sp, tok)));
+
+            let e_push = cx.expr_method_call(
+                sp,
+                cx.expr_ident(sp, id_ext("tt")),
+                id_ext("push"),
+                vec!(e_tok));
+
             vec!(cx.stmt_expr(e_push))
         },
         ast::TtDelimited(_, ref delimed) => {
-            mk_tt(cx, &delimed.open_tt()).into_iter()
+            mk_tt(
+                cx,
+                &delimed.open_tt(),
+            ).into_iter()
                 .chain(delimed.tts.iter().flat_map(|tt| mk_tt(cx, tt).into_iter()))
                 .chain(mk_tt(cx, &delimed.close_tt()).into_iter())
                 .collect()
