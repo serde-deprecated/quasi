@@ -1,7 +1,8 @@
 [package]
-name = "quote"
+name = "quote_macros"
 version = "0.1.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 
-[dependencies.quote_macros]
-path = "quote_macros"
+[lib]
+name = "quote_macros"
+plugin = true

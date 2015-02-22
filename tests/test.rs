@@ -12,6 +12,7 @@
 #![plugin(quote_macros)]
 
 extern crate syntax;
+extern crate quote;
 
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
@@ -47,7 +48,7 @@ fn test_quote_tokens() {
     let cx = make_ext_ctxt(&sess);
 
     let tts = quote_tokens!(&cx, (+ 2 3));
-    assert_eq!(pprust::tts_to_string(&expr), "+ 2 3");
+    assert_eq!(pprust::tts_to_string(&tts), "( + 2 3 )");
 }
 
 #[test]
