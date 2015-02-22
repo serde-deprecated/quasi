@@ -1,0 +1,8 @@
+[package]
+name = "quote_macros"
+version = "0.1.0"
+authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
+
+[lib]
+name = "quote_macros"
+plugin = true
