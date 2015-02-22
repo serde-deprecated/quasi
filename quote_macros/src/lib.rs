@@ -13,6 +13,8 @@
 extern crate syntax;
 extern crate rustc;
 
+extern crate "syntax_ast_builder" as builder;
+
 use syntax::ast;
 use syntax::codemap::{Span, respan};
 use syntax::ext::base::ExtCtxt;
@@ -107,30 +109,38 @@ fn id_ext(str: &str) -> ast::Ident {
 
 // Lift an ident to the expr that evaluates to that ident.
 fn mk_ident(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let e_str = cx.expr_str(sp, token::get_ident(ident));
-    cx.expr_method_call(sp,
-                        cx.expr_ident(sp, id_ext("ext_cx")),
-                        id_ext("ident_of"),
-                        vec!(e_str))
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
+    builder.expr().span(sp).method_call("ident_of").id("ext_cx")
+        .arg().str(ident)
+        .build()
 }
 
 // Lift a name to the expr that evaluates to that name
 fn mk_name(cx: &ExtCtxt, sp: Span, ident: ast::Ident) -> P<ast::Expr> {
-    let e_str = cx.expr_str(sp, token::get_ident(ident));
-    cx.expr_method_call(sp,
-                        cx.expr_ident(sp, id_ext("ext_cx")),
-                        id_ext("name_of"),
-                        vec!(e_str))
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
+    builder.expr().span(sp).method_call("name_of").id("ext_cx")
+        .arg().str(ident)
+        .build()
 }
 
 fn mk_ast_path(cx: &ExtCtxt, sp: Span, name: &str) -> P<ast::Expr> {
-    let idents = vec!(id_ext("syntax"), id_ext("ast"), id_ext(name));
-    cx.expr_path(cx.path_global(sp, idents))
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
+    builder.expr().span(sp).path().global()
+        .build_from_ids(&["syntax", "ast", name])
 }
 
 fn mk_token_path(cx: &ExtCtxt, sp: Span, name: &str) -> P<ast::Expr> {
-    let idents = vec!(id_ext("syntax"), id_ext("parse"), id_ext("token"), id_ext(name));
-    cx.expr_path(cx.path_global(sp, idents))
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx);
+
+    builder.expr().span(sp).path().global()
+        .build_from_ids(&["syntax", "parse", "token", name])
 }
 
 fn mk_binop(cx: &ExtCtxt, sp: Span, bop: token::BinOpToken) -> P<ast::Expr> {
