@@ -42,6 +42,15 @@ fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
 }
 
 #[test]
+fn test_quote_tokens() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let tts = quote_tokens!(&cx, (+ 2 3));
+    assert_eq!(pprust::tts_to_string(&expr), "+ 2 3");
+}
+
+#[test]
 fn test_quote_expr() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
