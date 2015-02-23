@@ -300,7 +300,7 @@ fn mk_token(builder: &builder::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
     }
 }
 
-fn mk_tt(cx: &ExtCtxt, tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
+fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
     let ctx = builder::Ctx::new();
     let builder = builder::AstBuilder::new(&ctx);
 
@@ -331,7 +331,7 @@ fn mk_tt(cx: &ExtCtxt, tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
             for i in 0..tt.len() {
                 seq.push(tt.get_tt(i));
             }
-            mk_tts(cx, &seq[..])
+            mk_tts(&seq[..])
         }
         ast::TtToken(sp, ref tok) => {
             let builder = builder.clone().span(sp);
@@ -351,21 +351,20 @@ fn mk_tt(cx: &ExtCtxt, tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
         },
         ast::TtDelimited(_, ref delimed) => {
             mk_tt(
-                cx,
                 &delimed.open_tt(),
             ).into_iter()
-                .chain(delimed.tts.iter().flat_map(|tt| mk_tt(cx, tt).into_iter()))
-                .chain(mk_tt(cx, &delimed.close_tt()).into_iter())
+                .chain(delimed.tts.iter().flat_map(|tt| mk_tt(tt).into_iter()))
+                .chain(mk_tt(&delimed.close_tt()).into_iter())
                 .collect()
         },
         ast::TtSequence(..) => panic!("TtSequence in quote!"),
     }
 }
 
-fn mk_tts(cx: &ExtCtxt, tts: &[ast::TokenTree]) -> Vec<P<ast::Stmt>> {
+fn mk_tts(tts: &[ast::TokenTree]) -> Vec<P<ast::Stmt>> {
     let mut ss = Vec::new();
     for tt in tts {
-        ss.extend(mk_tt(cx, tt).into_iter());
+        ss.extend(mk_tt(tt).into_iter());
     }
     ss
 }
@@ -415,23 +414,26 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     // of quotes, for example) but at this point it seems not likely to be
     // worth the hassle.
 
-    let e_sp = cx.expr_method_call(sp,
-                                   cx.expr_ident(sp, id_ext("ext_cx")),
-                                   id_ext("call_site"),
-                                   Vec::new());
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx).span(sp);
 
-    let stmt_let_sp = cx.stmt_let(sp, false,
-                                  id_ext("_sp"),
-                                  e_sp);
+    let e_sp = builder.expr().method_call("call_site")
+        .id("ext_cx")
+        .build();
 
-    let stmt_let_tt = cx.stmt_let(sp, true, id_ext("tt"), cx.expr_vec_ng(sp));
+    let stmt_let_sp = builder.stmt()
+        .let_id("_sp").expr_(e_sp);
 
-    let mut vector = vec!(stmt_let_sp, stmt_let_tt);
-    vector.extend(mk_tts(cx, &tts[..]).into_iter());
-    let block = cx.expr_block(
-        cx.block_all(sp,
-                     vector,
-                     Some(cx.expr_ident(sp, id_ext("tt")))));
+    let stmt_let_tt = builder.stmt().let_().mut_id("tt")
+        .expr().call()
+            .path().global().ids(&["std", "vec", "Vec", "new"]).build()
+            .build();
+
+    let block = builder.expr().block()
+        .stmt_(stmt_let_sp)
+        .stmt_(stmt_let_tt)
+        .stmts(mk_tts(&tts))
+        .expr().id("tt");
 
     (cx_expr, block)
 }
