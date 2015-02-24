@@ -16,7 +16,7 @@ extern crate rustc;
 extern crate "syntax_ast_builder" as builder;
 
 use syntax::ast;
-use syntax::codemap::{Span, respan};
+use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::base;
 use syntax::ext::build::AstBuilder;
@@ -39,7 +39,7 @@ pub fn expand_quote_tokens<'cx>(
     tts: &[ast::TokenTree],
 ) -> Box<base::MacResult+'cx> {
     let (cx_expr, expr) = expand_tts(cx, sp, tts);
-    let expanded = expand_wrapper(cx, sp, cx_expr, expr);
+    let expanded = expand_wrapper(sp, cx_expr, expr);
     base::MacExpr::new(expanded)
 }
 
@@ -116,7 +116,7 @@ fn mk_ident(builder: &builder::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
 
 // Lift a name to the expr that evaluates to that name
 fn mk_name<T>(builder: &builder::AstBuilder, name: T) -> P<ast::Expr>
-    where T: builder::IntoInternedString
+    where T: builder::ToInternedString
 {
     builder.expr().method_call("name_of").id("ext_cx")
         .arg().str(name)
@@ -438,8 +438,7 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     (cx_expr, block)
 }
 
-fn expand_wrapper(cx: &ExtCtxt,
-                  sp: Span,
+fn expand_wrapper(sp: Span,
                   cx_expr: P<ast::Expr>,
                   expr: P<ast::Expr>) -> P<ast::Expr> {
     let ctx = builder::Ctx::new();
@@ -452,24 +451,11 @@ fn expand_wrapper(cx: &ExtCtxt,
     let stmt_let_ext_cx = builder.stmt().let_id("ext_cx")
         .build_expr(cx_expr_borrow);
 
-    let ignore_unused_import = cx.meta_list(
-        sp,
-        InternedString::new("allow"),
-        vec![cx.meta_word(sp, InternedString::new("unused_imports"))]
-    );
-
-    let quote_path = builder.path().id("quote").build();
-
-    let use_quote = P(ast::Item {
-        id: ast::DUMMY_NODE_ID,
-        ident: special_idents::invalid,
-        attrs: vec![cx.attribute(sp, ignore_unused_import)],
-        node: ast::ItemUse(
-            P(respan(sp, ast::ViewPathGlob(quote_path))),
-        ),
-        vis: ast::Inherited,
-        span: sp,
-    });
+    let use_quote = builder.item()
+        .attr().build_allow(&["unused_imports"])
+        .use_glob()
+        .id("quote")
+        .build();
 
     builder.expr().block()
         .stmt().build_item(use_quote)
@@ -500,7 +486,7 @@ fn expand_parse_call(cx: &ExtCtxt,
     let expr = cx.expr_method_call(sp, new_parser_call, id_ext(parse_method),
                                    arg_exprs);
 
-    expand_wrapper(cx, sp, cx_expr, expr)
+    expand_wrapper(sp, cx_expr, expr)
 }
 
 #[plugin_registrar]
