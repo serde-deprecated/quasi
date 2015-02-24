@@ -19,7 +19,6 @@ use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::base;
-use syntax::ext::build::AstBuilder;
 use syntax::parse::token::*;
 use syntax::parse::token;
 use syntax::ptr::P;
@@ -97,14 +96,17 @@ pub fn expand_quote_stmt(cx: &mut ExtCtxt,
                          sp: Span,
                          tts: &[ast::TokenTree])
                          -> Box<base::MacResult+'static> {
-    let e_attrs = cx.expr_vec_ng(sp);
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx).span(sp);
+
+    let e_attrs = builder.expr().call()
+        .path().global().ids(&["std", "vec", "Vec", "new"]).build()
+        .build();
+
     let expanded = expand_parse_call(cx, sp, "parse_stmt",
                                     vec!(e_attrs), tts);
-    base::MacExpr::new(expanded)
-}
 
-fn id_ext(str: &str) -> ast::Ident {
-    str_to_ident(str)
+    base::MacExpr::new(expanded)
 }
 
 // Lift an ident to the expr that evaluates to that ident.
@@ -468,23 +470,30 @@ fn expand_parse_call(cx: &ExtCtxt,
                      parse_method: &str,
                      arg_exprs: Vec<P<ast::Expr>> ,
                      tts: &[ast::TokenTree]) -> P<ast::Expr> {
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx).span(sp);
+
     let (cx_expr, tts_expr) = expand_tts(cx, sp, tts);
 
-    let cfg_call = || cx.expr_method_call(
-        sp, cx.expr_ident(sp, id_ext("ext_cx")),
-        id_ext("cfg"), Vec::new());
+    let cfg_call = builder.expr().method_call("cfg")
+        .id("ext_cx")
+        .build();
 
-    let parse_sess_call = || cx.expr_method_call(
-        sp, cx.expr_ident(sp, id_ext("ext_cx")),
-        id_ext("parse_sess"), Vec::new());
+    let parse_sess_call = builder.expr().method_call("parse_sess")
+        .id("ext_cx")
+        .build();
 
-    let new_parser_call =
-        cx.expr_call(sp,
-                     cx.expr_ident(sp, id_ext("new_parser_from_tts")),
-                     vec!(parse_sess_call(), cfg_call(), tts_expr));
+    let new_parser_call = builder.expr().call()
+        .id("new_parser_from_tts")
+        .with_arg(parse_sess_call)
+        .with_arg(cfg_call)
+        .with_arg(tts_expr)
+        .build();
 
-    let expr = cx.expr_method_call(sp, new_parser_call, id_ext(parse_method),
-                                   arg_exprs);
+    let expr = builder.expr().method_call(parse_method)
+        .build_expr(new_parser_call)
+        .with_args(arg_exprs)
+        .build();
 
     expand_wrapper(sp, cx_expr, expr)
 }
