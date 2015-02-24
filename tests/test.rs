@@ -52,6 +52,15 @@ fn test_quote_tokens() {
 }
 
 #[test]
+fn test_quote_ty() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let ty = quote_ty!(&cx, isize);
+    assert_eq!(pprust::ty_to_string(&ty), "isize");
+}
+
+#[test]
 fn test_quote_expr() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
@@ -62,24 +71,6 @@ fn test_quote_expr() {
     let value = 24;
     let expr = quote_expr!(&cx, $value);
     assert_eq!(pprust::expr_to_string(&expr), "24i32");
-}
-
-#[test]
-fn test_quote_ty() {
-    let sess = parse::new_parse_sess();
-    let cx = make_ext_ctxt(&sess);
-
-    let ty = quote_ty!(&cx, isize);
-    assert_eq!(pprust::ty_to_string(&ty), "isize");
-}
-
-#[test]
-fn test_quote_item() {
-    let sess = parse::new_parse_sess();
-    let cx = make_ext_ctxt(&sess);
-
-    let item = quote_item!(&cx, static x : int = 10;).unwrap();
-    assert_eq!(pprust::item_to_string(&item), "static x: int = 10;");
 }
 
 #[test]
@@ -107,4 +98,50 @@ fn test_quote_arm() {
 
     let arm = quote_arm!(&cx, (ref x, ref y) => (x, y),);
     assert_eq!(pprust::arm_to_string(&arm), " (ref x, ref y) => (x, y),");
+}
+
+#[test]
+fn test_quote_block() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let block = quote_block!(&cx, {
+        let x = 5;
+        let y = 6;
+        x + y
+    });
+
+    assert_eq!(
+        pprust::block_to_string(&block),
+        "{ let x = 5; let y = 6; x + y }");
+}
+
+#[test]
+fn test_quote_item() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let item = quote_item!(&cx, static x : int = 10;).unwrap();
+    assert_eq!(pprust::item_to_string(&item), "static x: int = 10;");
+}
+
+#[test]
+fn test_quote_with_macro() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let block = quote_block!(&cx, {
+        macro_rules! value { () => 6 }
+        value!()
+    });
+
+    assert_eq!(
+        pprust::block_to_string(&block),
+        "{\n    macro_rules! value((  ) => 6);\n    value!()\n}");
+
+    // Make sure we don't expand macros in the quote.
+    macro_rules! value { () => 5 }
+    let block = quote_block!(&cx, { value!() });
+
+    assert_eq!(pprust::block_to_string(&block), "{ value!() }");
 }

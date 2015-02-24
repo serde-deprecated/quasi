@@ -42,6 +42,14 @@ pub fn expand_quote_tokens<'cx>(
     base::MacExpr::new(expanded)
 }
 
+pub fn expand_quote_ty(cx: &mut ExtCtxt,
+                       sp: Span,
+                       tts: &[ast::TokenTree])
+                       -> Box<base::MacResult+'static> {
+    let expanded = expand_parse_call(cx, sp, "parse_ty", vec!(), tts);
+    base::MacExpr::new(expanded)
+}
+
 pub fn expand_quote_expr<'cx>(cx: &'cx mut ExtCtxt,
                               sp: Span,
                               tts: &[ast::TokenTree])
@@ -50,12 +58,20 @@ pub fn expand_quote_expr<'cx>(cx: &'cx mut ExtCtxt,
     base::MacExpr::new(expanded)
 }
 
-pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
-                              sp: Span,
-                              tts: &[ast::TokenTree])
-                              -> Box<base::MacResult+'cx> {
-    let expanded = expand_parse_call(cx, sp, "parse_item_with_outer_attributes",
-                                    vec!(), tts);
+pub fn expand_quote_stmt(cx: &mut ExtCtxt,
+                         sp: Span,
+                         tts: &[ast::TokenTree])
+                         -> Box<base::MacResult+'static> {
+    let ctx = builder::Ctx::new();
+    let builder = builder::AstBuilder::new(&ctx).span(sp);
+
+    let e_attrs = builder.expr().call()
+        .path().global().ids(&["std", "vec", "Vec", "new"]).build()
+        .build();
+
+    let expanded = expand_parse_call(cx, sp, "parse_stmt",
+                                    vec!(e_attrs), tts);
+
     base::MacExpr::new(expanded)
 }
 
@@ -75,11 +91,11 @@ pub fn expand_quote_arm(cx: &mut ExtCtxt,
     base::MacExpr::new(expanded)
 }
 
-pub fn expand_quote_ty(cx: &mut ExtCtxt,
-                       sp: Span,
-                       tts: &[ast::TokenTree])
-                       -> Box<base::MacResult+'static> {
-    let expanded = expand_parse_call(cx, sp, "parse_ty", vec!(), tts);
+pub fn expand_quote_block<'cx>(cx: &'cx mut ExtCtxt,
+                              sp: Span,
+                              tts: &[ast::TokenTree])
+                              -> Box<base::MacResult+'cx> {
+    let expanded = expand_parse_call(cx, sp, "parse_block", Vec::new(), tts);
     base::MacExpr::new(expanded)
 }
 
@@ -92,20 +108,12 @@ pub fn expand_quote_method(cx: &mut ExtCtxt,
     base::MacExpr::new(expanded)
 }
 
-pub fn expand_quote_stmt(cx: &mut ExtCtxt,
-                         sp: Span,
-                         tts: &[ast::TokenTree])
-                         -> Box<base::MacResult+'static> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx).span(sp);
-
-    let e_attrs = builder.expr().call()
-        .path().global().ids(&["std", "vec", "Vec", "new"]).build()
-        .build();
-
-    let expanded = expand_parse_call(cx, sp, "parse_stmt",
-                                    vec!(e_attrs), tts);
-
+pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
+                              sp: Span,
+                              tts: &[ast::TokenTree])
+                              -> Box<base::MacResult+'cx> {
+    let expanded = expand_parse_call(cx, sp, "parse_item_with_outer_attributes",
+                                    vec!(), tts);
     base::MacExpr::new(expanded)
 }
 
@@ -233,6 +241,18 @@ fn mk_token(builder: &builder::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
             mk_lit!("Float", suf, e_fident)
         }
 
+        token::Literal(token::Binary(ident), suf) => {
+            mk_lit!("Binary", suf, mk_name(builder, ident.ident()))
+        }
+
+        token::Literal(token::BinaryRaw(ident, n), suf) => {
+            mk_lit!(
+                "BinaryRaw",
+                suf,
+                mk_name(builder, ident.ident()),
+                builder.expr().usize(n))
+        }
+
         token::Literal(token::Str_(ident), suf) => {
             mk_lit!("Str_", suf, mk_name(builder, ident.ident()))
         }
@@ -297,8 +317,24 @@ fn mk_token(builder: &builder::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
         token::Dollar       => mk_token_path(builder, "Dollar"),
         token::Underscore   => mk_token_path(builder, "Underscore"),
         token::Eof          => mk_token_path(builder, "Eof"),
+        token::DotDotDot    => mk_token_path(builder, "DotDotDot"),
+        token::Question     => mk_token_path(builder, "Question"),
+        token::Whitespace   => mk_token_path(builder, "Whitespace"),
+        token::Comment      => mk_token_path(builder, "Comment"),
 
-        _ => panic!("quote! with {:?} token", tok),
+        token::Shebang(s) => {
+            builder.expr().call()
+                .build_expr(mk_token_path(builder, "Shebang"))
+                .arg().str(s)
+                .build()
+        }
+
+        token::Interpolated(..)
+        | token::MatchNt(..)
+        | token::SubstNt(..)
+        | token::SpecialVarNt(..) => {
+            panic!("quote! with {:?} token", tok)
+        }
     }
 }
 
@@ -502,11 +538,12 @@ fn expand_parse_call(cx: &ExtCtxt,
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("quote_tokens", expand_quote_tokens);
+    reg.register_macro("quote_ty", expand_quote_ty);
     reg.register_macro("quote_expr", expand_quote_expr);
-    reg.register_macro("quote_item", expand_quote_item);
+    reg.register_macro("quote_stmt", expand_quote_stmt);
     reg.register_macro("quote_pat", expand_quote_pat);
     reg.register_macro("quote_arm", expand_quote_arm);
-    reg.register_macro("quote_ty", expand_quote_ty);
+    reg.register_macro("quote_block", expand_quote_block);
     reg.register_macro("quote_method", expand_quote_method);
-    reg.register_macro("quote_stmt", expand_quote_stmt);
+    reg.register_macro("quote_item", expand_quote_item);
 }
