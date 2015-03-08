@@ -1,6 +1,6 @@
 [package]
 name = "quasi_macros"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
@@ -11,4 +11,4 @@ name = "quasi_macros"
 plugin = true
 
 [dependencies]
-syntax_ast_builder = "0.1.0"
+aster = "0.1.2"

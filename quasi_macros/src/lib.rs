@@ -12,8 +12,7 @@
 
 extern crate syntax;
 extern crate rustc;
-
-extern crate "syntax_ast_builder" as builder;
+extern crate aster;
 
 use syntax::ast;
 use syntax::codemap::Span;
@@ -62,8 +61,8 @@ pub fn expand_quote_stmt(cx: &mut ExtCtxt,
                          sp: Span,
                          tts: &[ast::TokenTree])
                          -> Box<base::MacResult+'static> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx).span(sp);
+    let ctx = aster::Ctx::new();
+    let builder = aster::AstBuilder::new(&ctx).span(sp);
 
     let e_attrs = builder.expr().call()
         .path().global().ids(&["std", "vec", "Vec", "new"]).build()
@@ -118,36 +117,36 @@ pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
 }
 
 // Lift an ident to the expr that evaluates to that ident.
-fn mk_ident(builder: &builder::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
+fn mk_ident(builder: &aster::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
     builder.expr().method_call("ident_of").id("ext_cx")
         .arg().str(ident)
         .build()
 }
 
 // Lift a name to the expr that evaluates to that name
-fn mk_name<T>(builder: &builder::AstBuilder, name: T) -> P<ast::Expr>
-    where T: builder::ToInternedString
+fn mk_name<T>(builder: &aster::AstBuilder, name: T) -> P<ast::Expr>
+    where T: aster::ToInternedString
 {
     builder.expr().method_call("name_of").id("ext_cx")
         .arg().str(name)
         .build()
 }
 
-fn mk_ast_path(builder: &builder::AstBuilder, name: &str) -> P<ast::Expr> {
+fn mk_ast_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
     builder.expr().path()
         .global()
         .ids(&["syntax", "ast", name])
         .build()
 }
 
-fn mk_token_path(builder: &builder::AstBuilder, name: &str) -> P<ast::Expr> {
+fn mk_token_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
     builder.expr().path()
         .global()
         .ids(&["syntax", "parse", "token", name])
         .build()
 }
 
-fn mk_binop(builder: &builder::AstBuilder, bop: token::BinOpToken) -> P<ast::Expr> {
+fn mk_binop(builder: &aster::AstBuilder, bop: token::BinOpToken) -> P<ast::Expr> {
     let name = match bop {
         token::Plus     => "Plus",
         token::Minus    => "Minus",
@@ -163,7 +162,7 @@ fn mk_binop(builder: &builder::AstBuilder, bop: token::BinOpToken) -> P<ast::Exp
     mk_token_path(builder, name)
 }
 
-fn mk_delim(builder: &builder::AstBuilder, delim: token::DelimToken) -> P<ast::Expr> {
+fn mk_delim(builder: &aster::AstBuilder, delim: token::DelimToken) -> P<ast::Expr> {
     let name = match delim {
         token::Paren     => "Paren",
         token::Bracket   => "Bracket",
@@ -173,7 +172,7 @@ fn mk_delim(builder: &builder::AstBuilder, delim: token::DelimToken) -> P<ast::E
 }
 
 #[allow(non_upper_case_globals)]
-fn mk_token(builder: &builder::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
+fn mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
     macro_rules! mk_lit {
         ($name: expr, $suffix: expr, $($args: expr),+) => {{
             let inner = builder.expr().call()
@@ -339,8 +338,8 @@ fn mk_token(builder: &builder::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
 }
 
 fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx);
+    let ctx = aster::Ctx::new();
+    let builder = aster::AstBuilder::new(&ctx);
 
     match *tt {
         ast::TtToken(sp, SubstNt(ident, _)) => {
@@ -452,8 +451,8 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     // of quotes, for example) but at this point it seems not likely to be
     // worth the hassle.
 
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx).span(sp);
+    let ctx = aster::Ctx::new();
+    let builder = aster::AstBuilder::new(&ctx).span(sp);
 
     let e_sp = builder.expr().method_call("call_site")
         .id("ext_cx")
@@ -479,8 +478,8 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
 fn expand_wrapper(sp: Span,
                   cx_expr: P<ast::Expr>,
                   expr: P<ast::Expr>) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx).span(sp);
+    let ctx = aster::Ctx::new();
+    let builder = aster::AstBuilder::new(&ctx).span(sp);
 
     // Explicitly borrow to avoid moving from the invoker (#16992)
     let cx_expr_borrow = builder.expr()
@@ -506,8 +505,8 @@ fn expand_parse_call(cx: &ExtCtxt,
                      parse_method: &str,
                      arg_exprs: Vec<P<ast::Expr>> ,
                      tts: &[ast::TokenTree]) -> P<ast::Expr> {
-    let ctx = builder::Ctx::new();
-    let builder = builder::AstBuilder::new(&ctx).span(sp);
+    let ctx = aster::Ctx::new();
+    let builder = aster::AstBuilder::new(&ctx).span(sp);
 
     let (cx_expr, tts_expr) = expand_tts(cx, sp, tts);
 
