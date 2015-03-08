@@ -7,5 +7,5 @@ authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 name = "quote_macros"
 plugin = true
 
-[dependencies.syntax_ast_builder]
-git = "https://github.com/erickt/rust-ast-builder"
+[dependencies]
+syntax_ast_builder = "0.1.0"

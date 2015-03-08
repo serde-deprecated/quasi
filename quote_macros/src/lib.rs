@@ -39,7 +39,7 @@ pub fn expand_quote_tokens<'cx>(
 ) -> Box<base::MacResult+'cx> {
     let (cx_expr, expr) = expand_tts(cx, sp, tts);
     let expanded = expand_wrapper(sp, cx_expr, expr);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_ty(cx: &mut ExtCtxt,
@@ -47,7 +47,7 @@ pub fn expand_quote_ty(cx: &mut ExtCtxt,
                        tts: &[ast::TokenTree])
                        -> Box<base::MacResult+'static> {
     let expanded = expand_parse_call(cx, sp, "parse_ty", vec!(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_expr<'cx>(cx: &'cx mut ExtCtxt,
@@ -55,7 +55,7 @@ pub fn expand_quote_expr<'cx>(cx: &'cx mut ExtCtxt,
                               tts: &[ast::TokenTree])
                               -> Box<base::MacResult+'cx> {
     let expanded = expand_parse_call(cx, sp, "parse_expr", Vec::new(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_stmt(cx: &mut ExtCtxt,
@@ -72,7 +72,7 @@ pub fn expand_quote_stmt(cx: &mut ExtCtxt,
     let expanded = expand_parse_call(cx, sp, "parse_stmt",
                                     vec!(e_attrs), tts);
 
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_pat<'cx>(cx: &'cx mut ExtCtxt,
@@ -80,7 +80,7 @@ pub fn expand_quote_pat<'cx>(cx: &'cx mut ExtCtxt,
                              tts: &[ast::TokenTree])
                              -> Box<base::MacResult+'cx> {
     let expanded = expand_parse_call(cx, sp, "parse_pat", vec!(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_arm(cx: &mut ExtCtxt,
@@ -88,7 +88,7 @@ pub fn expand_quote_arm(cx: &mut ExtCtxt,
                         tts: &[ast::TokenTree])
                         -> Box<base::MacResult+'static> {
     let expanded = expand_parse_call(cx, sp, "parse_arm", vec!(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_block<'cx>(cx: &'cx mut ExtCtxt,
@@ -96,7 +96,7 @@ pub fn expand_quote_block<'cx>(cx: &'cx mut ExtCtxt,
                               tts: &[ast::TokenTree])
                               -> Box<base::MacResult+'cx> {
     let expanded = expand_parse_call(cx, sp, "parse_block", Vec::new(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_method(cx: &mut ExtCtxt,
@@ -105,7 +105,7 @@ pub fn expand_quote_method(cx: &mut ExtCtxt,
                            -> Box<base::MacResult+'static> {
     let expanded = expand_parse_call(cx, sp, "parse_method_with_outer_attributes",
                                      vec!(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
@@ -114,7 +114,7 @@ pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
                               -> Box<base::MacResult+'cx> {
     let expanded = expand_parse_call(cx, sp, "parse_item_with_outer_attributes",
                                     vec!(), tts);
-    base::MacExpr::new(expanded)
+    base::MacEager::expr(expanded)
 }
 
 // Lift an ident to the expr that evaluates to that ident.

@@ -25,6 +25,7 @@ fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
         callee: syntax::codemap::NameAndSpan {
             name: "test".to_string(),
             format: syntax::codemap::MacroAttribute,
+            allow_internal_unstable: false,
             span: None
         }
     };
