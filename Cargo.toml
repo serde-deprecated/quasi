@@ -1,7 +1,7 @@
 [package]
-name = "quote"
+name = "quasi"
 version = "0.1.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 
-[dependencies.quote_macros]
-path = "quote_macros"
+[dev-dependencies]
+quasi_macros = "0.1.0"

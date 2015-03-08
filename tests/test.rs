@@ -9,10 +9,10 @@
 // except according to those terms.
 
 #![feature(plugin, rustc_private)]
-#![plugin(quote_macros)]
+#![plugin(quasi_macros)]
 
 extern crate syntax;
-extern crate quote;
+extern crate quasi;
 
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;

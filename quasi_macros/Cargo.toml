@@ -1,10 +1,10 @@
 [package]
-name = "quote_macros"
+name = "quasi_macros"
 version = "0.1.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 
 [lib]
-name = "quote_macros"
+name = "quasi_macros"
 plugin = true
 
 [dependencies]

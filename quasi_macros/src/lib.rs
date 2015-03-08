@@ -492,7 +492,7 @@ fn expand_wrapper(sp: Span,
     let use_quote = builder.item()
         .attr().build_allow(&["unused_imports"])
         .use_glob()
-        .id("quote")
+        .id("quasi")
         .build();
 
     builder.expr().block()
