@@ -11,4 +11,4 @@ name = "quasi_macros"
 plugin = true
 
 [dependencies]
-aster = "0.1.2"
+aster = "0.1.3"
