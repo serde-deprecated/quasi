@@ -540,4 +540,5 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("quote_block", expand_quote_block);
     reg.register_macro("quote_method", expand_quote_method);
     reg.register_macro("quote_item", expand_quote_item);
+    reg.register_macro("quote_impl_item", expand_quote_impl_item);
 }
