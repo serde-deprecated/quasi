@@ -127,6 +127,18 @@ fn test_quote_item() {
 }
 
 #[test]
+fn test_quote_impl_item() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let impl_item = quote_impl_item!(&cx, fn method(&mut self, x: u32) -> u32 { x });
+    assert_eq!(
+        pprust::to_string(|s| s.print_impl_item(&impl_item)),
+        "fn method(&mut self, x: u32) -> u32 { x }"
+    );
+}
+
+#[test]
 fn test_quote_with_macro() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);

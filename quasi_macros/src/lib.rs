@@ -115,6 +115,15 @@ pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
     base::MacEager::expr(expanded)
 }
 
+pub fn expand_quote_impl_item<'cx>(cx: &mut ExtCtxt,
+                                   sp: Span,
+                                   tts: &[ast::TokenTree])
+                                   -> Box<base::MacResult+'cx> {
+    let expanded = expand_parse_call(cx, sp, "parse_impl_item_with_outer_attributes",
+                                    vec!(), tts);
+    base::MacEager::expr(expanded)
+}
+
 // Lift an ident to the expr that evaluates to that ident.
 fn mk_ident(builder: &aster::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
     builder.expr().method_call("ident_of").id("ext_cx")
