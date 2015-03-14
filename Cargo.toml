@@ -6,5 +6,5 @@ license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
 repository = "https://github.com/erickt/rust-quasi"
 
-[dev-dependencies.quasi_macros]
-path = "quasi_macros/"
+[dev-dependencies]
+quasi_macros = "*"
