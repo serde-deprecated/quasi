@@ -138,6 +138,7 @@ fn test_quote_impl_item() {
     );
 }
 
+/*
 #[test]
 fn test_quote_where_clause() {
     let sess = parse::new_parse_sess();
@@ -149,6 +150,7 @@ fn test_quote_where_clause() {
         "where A, B: T"
     );
 }
+*/
 
 #[test]
 fn test_quote_with_macro() {

@@ -124,6 +124,7 @@ pub fn expand_quote_impl_item<'cx>(cx: &mut ExtCtxt,
     base::MacEager::expr(expanded)
 }
 
+/*
 pub fn expand_quote_where_clause<'cx>(cx: &mut ExtCtxt,
                                       sp: Span,
                                       tts: &[ast::TokenTree])
@@ -132,6 +133,7 @@ pub fn expand_quote_where_clause<'cx>(cx: &mut ExtCtxt,
                                     vec!(), tts);
     base::MacEager::expr(expanded)
 }
+*/
 
 // Lift an ident to the expr that evaluates to that ident.
 fn mk_ident(builder: &aster::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
@@ -559,5 +561,5 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("quote_method", expand_quote_method);
     reg.register_macro("quote_item", expand_quote_item);
     reg.register_macro("quote_impl_item", expand_quote_impl_item);
-    reg.register_macro("quote_where_clause", expand_quote_where_clause);
+    //reg.register_macro("quote_where_clause", expand_quote_where_clause);
 }
