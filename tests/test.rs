@@ -139,6 +139,18 @@ fn test_quote_impl_item() {
 }
 
 #[test]
+fn test_quote_where_clause() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let where_clause = quote_where_clause!(&cx, where A, B: T);
+    assert_eq!(
+        pprust::to_string(|s| s.print_where_clause(&where_clause)),
+        "where A, B: T"
+    );
+}
+
+#[test]
 fn test_quote_with_macro() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);

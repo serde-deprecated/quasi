@@ -15,6 +15,7 @@ extern crate syntax;
 use syntax::ast;
 use syntax::codemap::Spanned;
 use syntax::ext::base::ExtCtxt;
+use syntax::owned_slice::OwnedSlice;
 use syntax::parse::token;
 use syntax::parse;
 use syntax::print::pprust;
@@ -195,6 +196,30 @@ impl ToSourceWithHygiene for P<ast::ImplItem> {
     }
 }
 
+impl ToSource for ast::WhereClause {
+    fn to_source(&self) -> String {
+        pprust::to_string(|s| {
+            s.print_where_clause(&ast::Generics {
+                lifetimes: vec![],
+                ty_params: OwnedSlice::empty(),
+                where_clause: self.clone(),
+            })
+        })
+    }
+}
+
+impl ToSourceWithHygiene for ast::WhereClause {
+    fn to_source_with_hygiene(&self) -> String {
+        pprust::with_hygiene::to_string_hyg(|s| {
+            s.print_where_clause(&ast::Generics {
+                lifetimes: vec![],
+                ty_params: OwnedSlice::empty(),
+                where_clause: self.clone(),
+            })
+        })
+    }
+}
+
 impl ToSource for str {
     fn to_source(&self) -> String {
         let lit = dummy_spanned(ast::LitStr(
@@ -310,6 +335,7 @@ macro_rules! impl_to_tokens_lifetime {
 impl_to_tokens! { ast::Ident }
 impl_to_tokens! { P<ast::Item> }
 impl_to_tokens! { P<ast::ImplItem> }
+impl_to_tokens! { ast::WhereClause }
 impl_to_tokens! { P<ast::Pat> }
 impl_to_tokens! { ast::Arm }
 impl_to_tokens_lifetime! { &'a [P<ast::Item>] }
