@@ -391,8 +391,7 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
         parse::parse_stmt_from_source_str("<quote expansion>".to_string(),
                                           s,
                                           self.cfg(),
-                                          Vec::new(),
-                                          self.parse_sess())
+                                          self.parse_sess()).expect("parse error")
     }
 
     fn parse_expr(&self, s: String) -> P<ast::Expr> {

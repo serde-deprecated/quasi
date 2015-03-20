@@ -61,15 +61,7 @@ pub fn expand_quote_stmt(cx: &mut ExtCtxt,
                          sp: Span,
                          tts: &[ast::TokenTree])
                          -> Box<base::MacResult+'static> {
-    let builder = aster::AstBuilder::new().span(sp);
-
-    let e_attrs = builder.expr().call()
-        .path().global().ids(&["std", "vec", "Vec", "new"]).build()
-        .build();
-
-    let expanded = expand_parse_call(cx, sp, "parse_stmt",
-                                    vec!(e_attrs), tts);
-
+    let expanded = expand_parse_call(cx, sp, "parse_stmt", vec!(), tts);
     base::MacEager::expr(expanded)
 }
 
@@ -97,20 +89,11 @@ pub fn expand_quote_block<'cx>(cx: &'cx mut ExtCtxt,
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_method(cx: &mut ExtCtxt,
-                           sp: Span,
-                           tts: &[ast::TokenTree])
-                           -> Box<base::MacResult+'static> {
-    let expanded = expand_parse_call(cx, sp, "parse_method_with_outer_attributes",
-                                     vec!(), tts);
-    base::MacEager::expr(expanded)
-}
-
 pub fn expand_quote_item<'cx>(cx: &mut ExtCtxt,
                               sp: Span,
                               tts: &[ast::TokenTree])
                               -> Box<base::MacResult+'cx> {
-    let expanded = expand_parse_call(cx, sp, "parse_item_with_outer_attributes",
+    let expanded = expand_parse_call(cx, sp, "parse_item",
                                     vec!(), tts);
     base::MacEager::expr(expanded)
 }
@@ -119,7 +102,7 @@ pub fn expand_quote_impl_item<'cx>(cx: &mut ExtCtxt,
                                    sp: Span,
                                    tts: &[ast::TokenTree])
                                    -> Box<base::MacResult+'cx> {
-    let expanded = expand_parse_call(cx, sp, "parse_impl_item_with_outer_attributes",
+    let expanded = expand_parse_call(cx, sp, "parse_impl_item",
                                     vec!(), tts);
     base::MacEager::expr(expanded)
 }
@@ -558,7 +541,6 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("quote_pat", expand_quote_pat);
     reg.register_macro("quote_arm", expand_quote_arm);
     reg.register_macro("quote_block", expand_quote_block);
-    reg.register_macro("quote_method", expand_quote_method);
     reg.register_macro("quote_item", expand_quote_item);
     reg.register_macro("quote_impl_item", expand_quote_impl_item);
     //reg.register_macro("quote_where_clause", expand_quote_where_clause);

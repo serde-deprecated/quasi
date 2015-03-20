@@ -79,7 +79,7 @@ fn test_quote_stmt() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
 
-    let stmt = quote_stmt!(&cx, let x = 20;);
+    let stmt = quote_stmt!(&cx, let x = 20;).unwrap();
     assert_eq!(pprust::stmt_to_string(&stmt), "let x = 20;");
 }
 
