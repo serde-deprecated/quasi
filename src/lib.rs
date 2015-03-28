@@ -15,7 +15,6 @@ extern crate syntax;
 use syntax::ast;
 use syntax::codemap::Spanned;
 use syntax::ext::base::ExtCtxt;
-use syntax::owned_slice::OwnedSlice;
 use syntax::parse::token;
 use syntax::parse;
 use syntax::print::pprust;
@@ -200,11 +199,7 @@ impl ToSourceWithHygiene for P<ast::ImplItem> {
 impl ToSource for ast::WhereClause {
     fn to_source(&self) -> String {
         pprust::to_string(|s| {
-            s.print_where_clause(&ast::Generics {
-                lifetimes: vec![],
-                ty_params: OwnedSlice::empty(),
-                where_clause: self.clone(),
-            })
+            s.print_where_clause(&self)
         })
     }
 }
@@ -212,11 +207,7 @@ impl ToSource for ast::WhereClause {
 impl ToSourceWithHygiene for ast::WhereClause {
     fn to_source_with_hygiene(&self) -> String {
         pprust::with_hygiene::to_string_hyg(|s| {
-            s.print_where_clause(&ast::Generics {
-                lifetimes: vec![],
-                ty_params: OwnedSlice::empty(),
-                where_clause: self.clone(),
-            })
+            s.print_where_clause(&self)
         })
     }
 }
@@ -299,13 +290,13 @@ macro_rules! impl_to_source_isize {
     );
 }
 
-impl_to_source_isize! { signed, isize, ast::TyIs(false) }
+impl_to_source_isize! { signed, isize, ast::TyIs }
 impl_to_source_isize! { signed, i8,  ast::TyI8 }
 impl_to_source_isize! { signed, i16, ast::TyI16 }
 impl_to_source_isize! { signed, i32, ast::TyI32 }
 impl_to_source_isize! { signed, i64, ast::TyI64 }
 
-impl_to_source_isize! { unsigned, usize, ast::TyUs(false) }
+impl_to_source_isize! { unsigned, usize, ast::TyUs }
 impl_to_source_isize! { unsigned, u8,   ast::TyU8 }
 impl_to_source_isize! { unsigned, u16,  ast::TyU16 }
 impl_to_source_isize! { unsigned, u32,  ast::TyU32 }
