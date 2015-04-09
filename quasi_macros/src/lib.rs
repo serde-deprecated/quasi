@@ -419,11 +419,11 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     p.quote_depth += 1;
 
     let cx_expr = p.parse_expr();
-    if !p.eat(&token::Comma) {
-        p.fatal("expected token `,`");
+    if !p.eat(&token::Comma).ok().unwrap() {
+        let _ = p.fatal("expected token `,`");
     }
 
-    let tts = p.parse_all_token_trees();
+    let tts = p.parse_all_token_trees().ok().unwrap();
     p.abort_if_errors();
 
     // We also bind a single value, sp, to ext_cx.call_site()

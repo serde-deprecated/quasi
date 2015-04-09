@@ -110,7 +110,7 @@ fn test_quote_block() {
         let x = 5;
         let y = 6;
         x + y
-    });
+    }).ok().unwrap();
 
     assert_eq!(
         pprust::block_to_string(&block),
@@ -132,6 +132,7 @@ fn test_quote_impl_item() {
     let cx = make_ext_ctxt(&sess);
 
     let impl_item = quote_impl_item!(&cx, fn method(&mut self, x: u32) -> u32 { x });
+    let impl_item = impl_item.ok().unwrap();
     assert_eq!(
         pprust::to_string(|s| s.print_impl_item(&impl_item)),
         "fn method(&mut self, x: u32) -> u32 { x }"
@@ -160,7 +161,7 @@ fn test_quote_with_macro() {
     let block = quote_block!(&cx, {
         macro_rules! value { () => 6 }
         value!()
-    });
+    }).ok().unwrap();
 
     assert_eq!(
         pprust::block_to_string(&block),
@@ -168,7 +169,7 @@ fn test_quote_with_macro() {
 
     // Make sure we don't expand macros in the quote.
     macro_rules! value { () => 5 }
-    let block = quote_block!(&cx, { value!() });
+    let block = quote_block!(&cx, { value!() }).ok().unwrap();
 
     assert_eq!(pprust::block_to_string(&block), "{ value!() }");
 }
