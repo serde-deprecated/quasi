@@ -37,7 +37,7 @@ pub fn expand_quote_tokens<'cx>(
     tts: &[ast::TokenTree],
 ) -> Box<base::MacResult+'cx> {
     let (cx_expr, expr) = expand_tts(cx, sp, tts);
-    let expanded = expand_wrapper(sp, cx_expr, expr);
+    let expanded = expand_wrapper(sp, cx_expr, expr, &[&["quasi"]]);
     base::MacEager::expr(expanded)
 }
 
@@ -62,6 +62,36 @@ pub fn expand_quote_stmt(cx: &mut ExtCtxt,
                          tts: &[ast::TokenTree])
                          -> Box<base::MacResult+'static> {
     let expanded = expand_parse_call(cx, sp, "parse_stmt", vec!(), tts);
+    base::MacEager::expr(expanded)
+}
+
+pub fn expand_quote_attr(cx: &mut ExtCtxt,
+                         sp: Span,
+                         tts: &[ast::TokenTree])
+                         -> Box<base::MacResult+'static> {
+    let builder = aster::AstBuilder::new().span(sp);
+
+    let expanded = expand_parse_call(cx, sp, "parse_attribute",
+                                    vec![builder.expr().bool(true)], tts);
+
+    base::MacEager::expr(expanded)
+}
+
+pub fn expand_quote_matcher(cx: &mut ExtCtxt,
+                            sp: Span,
+                            tts: &[ast::TokenTree])
+                            -> Box<base::MacResult+'static> {
+    let builder = aster::AstBuilder::new().span(sp);
+
+    let (cx_expr, tts) = parse_arguments_to_quote(cx, tts);
+    let mut vector = mk_stmts_let(&builder);
+    vector.extend(statements_mk_tts(&tts[..], true).into_iter());
+
+    let block = builder.expr().block()
+        .with_stmts(vector)
+        .expr().id("tt");
+    
+    let expanded = expand_wrapper(sp, cx_expr, block, &[&["quasi"]]);
     base::MacEager::expr(expanded)
 }
 
@@ -174,7 +204,7 @@ fn mk_delim(builder: &aster::AstBuilder, delim: token::DelimToken) -> P<ast::Exp
 }
 
 #[allow(non_upper_case_globals)]
-fn mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
+fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
     macro_rules! mk_lit {
         ($name: expr, $suffix: expr, $($args: expr),+) => {{
             let inner = builder.expr().call()
@@ -330,8 +360,27 @@ fn mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
                 .build()
         }
 
+        token::MatchNt(name, kind, namep, kindp) => {
+            let namep = match namep {
+                ModName => mk_token_path(builder, "ModName"),
+                Plain => mk_token_path(builder, "Plain"),
+            };
+
+            let kindp = match kindp {
+                ModName => mk_token_path(builder, "ModName"),
+                Plain => mk_token_path(builder, "Plain"),
+            };
+
+            builder.expr().call()
+                .build(mk_token_path(builder, "MatchNt"))
+                .arg().build(mk_ident(builder, name))
+                .arg().build(mk_ident(builder, kind))
+                .arg().build(namep)
+                .arg().build(kindp)
+                .build()
+        }
+
         token::Interpolated(..)
-        | token::MatchNt(..)
         | token::SubstNt(..)
         | token::SpecialVarNt(..) => {
             panic!("quote! with {:?} token", tok)
@@ -339,7 +388,7 @@ fn mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr> {
     }
 }
 
-fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
+fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
     let builder = aster::AstBuilder::new();
 
     match *tt {
@@ -364,12 +413,12 @@ fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
 
             vec![builder.stmt().build_expr(e_push)]
         }
-        ref tt @ ast::TtToken(_, MatchNt(..)) => {
+        ref tt @ ast::TtToken(_, MatchNt(..)) if !matcher => {
             let mut seq = vec![];
             for i in 0..tt.len() {
                 seq.push(tt.get_tt(i));
             }
-            mk_tts(&seq[..])
+            statements_mk_tts(&seq[..], matcher)
         }
         ast::TtToken(sp, ref tok) => {
             let builder = builder.clone().span(sp);
@@ -377,7 +426,7 @@ fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
             let e_tok = builder.expr().call()
                 .build(mk_ast_path(&builder, "TtToken"))
                 .arg().id("_sp")
-                .with_arg(mk_token(&builder, tok))
+                .with_arg(expr_mk_token(&builder, tok))
                 .build();
 
             let e_push = builder.expr().method_call("push")
@@ -388,29 +437,74 @@ fn mk_tt(tt: &ast::TokenTree) -> Vec<P<ast::Stmt>> {
             vec![builder.stmt().build_expr(e_push)]
         },
         ast::TtDelimited(_, ref delimed) => {
-            mk_tt(
-                &delimed.open_tt(),
-            ).into_iter()
-                .chain(delimed.tts.iter().flat_map(|tt| mk_tt(tt).into_iter()))
-                .chain(mk_tt(&delimed.close_tt()).into_iter())
+            statements_mk_tt(&delimed.open_tt(), matcher).into_iter()
+                .chain(delimed.tts.iter()
+                                  .flat_map(|tt| statements_mk_tt(tt, matcher).into_iter()))
+                .chain(statements_mk_tt(&delimed.close_tt(), matcher).into_iter())
                 .collect()
         },
-        ast::TtSequence(..) => panic!("TtSequence in quote!"),
+        ast::TtSequence(sp, ref seq) => {
+            if !matcher {
+                panic!("TtSequence in quote!");
+            }
+
+            let builder = builder.clone().span(sp);
+
+            let e_sp = builder.expr().id("_sp");
+            //let e_sp = cx.expr_ident(sp, id_ext("_sp"));
+
+            let stmt_let_tt = builder.stmt().let_()
+                .mut_id("tt")
+                .expr().vec().build();
+            //let stmt_let_tt = cx.stmt_let(sp, true, id_ext("tt"), cx.expr_vec_ng(sp));
+            
+            let mut tts_stmts = vec![stmt_let_tt];
+            tts_stmts.extend(statements_mk_tts(&seq.tts[..], matcher).into_iter());
+
+            let e_tts = builder.expr().block()
+                .with_stmts(tts_stmts)
+                .expr().id("tt");
+
+            let e_separator = match seq.separator {
+                Some(ref sep) => builder.expr().some().build(expr_mk_token(&builder, sep)),
+                None => builder.expr().none(),
+            };
+
+            let e_op = match seq.op {
+                ast::ZeroOrMore => mk_ast_path(&builder, "ZeroOrMore"),
+                ast::OneOrMore => mk_ast_path(&builder, "OneOrMore"),
+            };
+
+            let e_seq_struct = builder.expr().struct_()
+                .global().ids(&["syntax", "ast", "SequenceRepetition"]).build()
+                .field("tts").build(e_tts)
+                .field("separator").build(e_separator)
+                .field("op").build(e_op)
+                .field("num_captures").usize(seq.num_captures)
+                .build();
+
+            let e_rc_new = builder.expr().rc()
+                .build(e_seq_struct);
+
+            let e_tok = builder.expr().call()
+                .build(mk_ast_path(&builder, "TtSequence"))
+                .arg().build(e_sp)
+                .arg().build(e_rc_new)
+                .build();
+
+            let e_push = builder.expr().method_call("push").id("tt")
+                .arg().build(e_tok)
+                .build();
+
+            vec![builder.stmt().expr().build(e_push)]
+        }
     }
 }
 
-fn mk_tts(tts: &[ast::TokenTree]) -> Vec<P<ast::Stmt>> {
-    let mut ss = Vec::new();
-    for tt in tts {
-        ss.extend(mk_tt(tt).into_iter());
-    }
-    ss
-}
-
-fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
-              -> (P<ast::Expr>, P<ast::Expr>) {
+fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[ast::TokenTree])
+                            -> (P<ast::Expr>, Vec<ast::TokenTree>) {
     // NB: It appears that the main parser loses its mind if we consider
-    // $foo as a TtNonterminal during the main parse, so we have to re-parse
+    // $foo as a SubstNt during the main parse, so we have to re-parse
     // under quote_depth > 0. This is silly and should go away; the _guess_ is
     // it has to do with transition away from supporting old-style macros, so
     // try removing it when enough of them are gone.
@@ -426,6 +520,10 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     let tts = p.parse_all_token_trees().ok().unwrap();
     p.abort_if_errors();
 
+    (cx_expr, tts)
+}
+
+fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<P<ast::Stmt>> {
     // We also bind a single value, sp, to ext_cx.call_site()
     //
     // This causes every span in a token-tree quote to be attributed to the
@@ -452,8 +550,6 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     // of quotes, for example) but at this point it seems not likely to be
     // worth the hassle.
 
-    let builder = aster::AstBuilder::new().span(sp);
-
     let e_sp = builder.expr().method_call("call_site")
         .id("ext_cx")
         .build();
@@ -466,10 +562,27 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
             .path().global().ids(&["std", "vec", "Vec", "new"]).build()
             .build();
 
+    vec!(stmt_let_sp, stmt_let_tt)
+}
+
+fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Vec<P<ast::Stmt>> {
+    let mut ss = Vec::new();
+    for tt in tts {
+        ss.extend(statements_mk_tt(tt, matcher).into_iter());
+    }
+    ss
+}
+
+fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
+              -> (P<ast::Expr>, P<ast::Expr>) {
+    let builder = aster::AstBuilder::new().span(sp);
+
+    let (cx_expr, tts) = parse_arguments_to_quote(cx, tts);
+
+    let mut vector = mk_stmts_let(&builder);
+    vector.extend(statements_mk_tts(&tts[..], false).into_iter());
     let block = builder.expr().block()
-        .with_stmt(stmt_let_sp)
-        .with_stmt(stmt_let_tt)
-        .with_stmts(mk_tts(&tts))
+        .with_stmts(vector)
         .expr().id("tt");
 
     (cx_expr, block)
@@ -477,7 +590,8 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
 
 fn expand_wrapper(sp: Span,
                   cx_expr: P<ast::Expr>,
-                  expr: P<ast::Expr>) -> P<ast::Expr> {
+                  expr: P<ast::Expr>,
+                  imports: &[&[&str]]) -> P<ast::Expr> {
     let builder = aster::AstBuilder::new().span(sp);
 
     // Explicitly borrow to avoid moving from the invoker (#16992)
@@ -487,14 +601,16 @@ fn expand_wrapper(sp: Span,
     let stmt_let_ext_cx = builder.stmt().let_id("ext_cx")
         .build(cx_expr_borrow);
 
-    let use_quote = builder.item()
-        .attr().allow(&["unused_imports"])
-        .use_glob()
-        .id("quasi")
-        .build();
+    let use_stmts = imports.iter()
+        .map(|path| {
+            builder.stmt().item()
+                .attr().allow(&["unused_imports"])
+                .use_().ids(path.iter()).build()
+                .glob()
+        });
 
     builder.expr().block()
-        .stmt().build_item(use_quote)
+        .with_stmts(use_stmts)
         .with_stmt(stmt_let_ext_cx)
         .build_expr(expr)
 }
@@ -528,7 +644,12 @@ fn expand_parse_call(cx: &ExtCtxt,
         .with_args(arg_exprs)
         .build();
 
-    expand_wrapper(sp, cx_expr, expr)
+    if parse_method == "parse_attribute" {
+        expand_wrapper(sp, cx_expr, expr, &[&["quasi"],
+                                            &["syntax", "parse", "attr"]])
+    } else {
+        expand_wrapper(sp, cx_expr, expr, &[&["quasi"]])
+    }
 }
 
 #[plugin_registrar]
@@ -537,7 +658,9 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("quote_tokens", expand_quote_tokens);
     reg.register_macro("quote_ty", expand_quote_ty);
     reg.register_macro("quote_expr", expand_quote_expr);
+    reg.register_macro("quote_matcher", expand_quote_matcher);
     reg.register_macro("quote_stmt", expand_quote_stmt);
+    reg.register_macro("quote_attr", expand_quote_attr);
     reg.register_macro("quote_pat", expand_quote_pat);
     reg.register_macro("quote_arm", expand_quote_arm);
     reg.register_macro("quote_block", expand_quote_block);

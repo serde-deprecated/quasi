@@ -102,6 +102,17 @@ fn test_quote_arm() {
 }
 
 #[test]
+fn test_quote_attr() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let attr = quote_attr!(&cx, #![cfg(foo = "bar")]);
+    assert_eq!(
+        pprust::to_string(|s| s.print_attribute(&attr)),
+        "#![cfg(foo = \"bar\")]");
+}
+
+#[test]
 fn test_quote_block() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
@@ -137,6 +148,15 @@ fn test_quote_impl_item() {
         pprust::to_string(|s| s.print_impl_item(&impl_item)),
         "fn method(&mut self, x: u32) -> u32 { x }"
     );
+}
+
+#[test]
+fn test_quote_matcher() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let tts = quote_matcher!(&cx, $($foo:tt,)* bar);
+    assert_eq!(pprust::tts_to_string(&tts), "$($foo:tt,)* bar");
 }
 
 /*
