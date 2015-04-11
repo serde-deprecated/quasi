@@ -165,9 +165,10 @@ fn test_quote_where_clause() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
 
-    let where_clause = quote_where_clause!(&cx, where A, B: T);
+    let where_clause = quote_where_clause!(&cx, where A, B: T).ok().unwrap();
+
     assert_eq!(
-        pprust::to_string(|s| s.print_where_clause(&where_clause)),
+        pprust::where_clause_to_string(&where_clause),
         "where A, B: T"
     );
 }
