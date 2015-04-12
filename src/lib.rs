@@ -35,11 +35,18 @@ impl ToTokens for TokenTree {
     }
 }
 
-impl<T: ToTokens> ToTokens for Vec<T> {
+impl<'a, T: ToTokens> ToTokens for &'a [T] {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         self.iter()
             .flat_map(|t| t.to_tokens(cx).into_iter())
             .collect()
+    }
+}
+
+impl<T: ToTokens> ToTokens for Vec<T> {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        let slice: &[T] = self;
+        slice.to_tokens(cx)
     }
 }
 
@@ -331,9 +338,7 @@ impl_to_tokens! { P<ast::ImplItem> }
 impl_to_tokens! { ast::WhereClause }
 impl_to_tokens! { P<ast::Pat> }
 impl_to_tokens! { ast::Arm }
-impl_to_tokens_lifetime! { &'a [P<ast::Item>] }
 impl_to_tokens! { ast::Ty }
-impl_to_tokens_lifetime! { &'a [ast::Ty] }
 impl_to_tokens! { Generics }
 impl_to_tokens! { P<ast::Stmt> }
 impl_to_tokens! { P<ast::Expr> }
