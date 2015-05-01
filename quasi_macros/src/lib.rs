@@ -451,12 +451,10 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
             let builder = builder.clone().span(sp);
 
             let e_sp = builder.expr().id("_sp");
-            //let e_sp = cx.expr_ident(sp, id_ext("_sp"));
 
             let stmt_let_tt = builder.stmt().let_()
                 .mut_id("tt")
                 .expr().vec().build();
-            //let stmt_let_tt = cx.stmt_let(sp, true, id_ext("tt"), cx.expr_vec_ng(sp));
             
             let mut tts_stmts = vec![stmt_let_tt];
             tts_stmts.extend(statements_mk_tts(&seq.tts[..], matcher).into_iter());
