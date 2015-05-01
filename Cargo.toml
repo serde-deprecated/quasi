@@ -1,11 +1,11 @@
 [package]
 name = "quasi"
-version = "0.1.10"
+version = "0.1.11"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
 repository = "https://github.com/erickt/rust-quasi"
 
-[dev-dependencies.quasi_macros]
-version = "*"
-path = "quasi_macros"
+[dev-dependencies]
+aster = "*"
+quasi_macros = { version = "*", path = "quasi_macros" }

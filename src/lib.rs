@@ -107,6 +107,30 @@ impl ToTokens for P<ast::TraitItem> {
     }
 }
 
+impl ToTokens for ast::Generics {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        use syntax::print::pprust;
+        use syntax::parse::parse_tts_from_source_str;
+
+        let s = pprust::generics_to_string(self);
+
+        parse_tts_from_source_str("<quote expansion".to_string(), s, cx.cfg(), cx.parse_sess())
+    }
+}
+
+impl ToTokens for ast::WhereClause {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        use syntax::print::pprust;
+        use syntax::parse::parse_tts_from_source_str;
+
+        let s = pprust::to_string(|s| {
+            s.print_where_clause(&self)
+        });
+
+        parse_tts_from_source_str("<quote expansion".to_string(), s, cx.cfg(), cx.parse_sess())
+    }
+}
+
 impl ToTokens for P<ast::Stmt> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
         vec![ast::TtToken(self.span, token::Interpolated(token::NtStmt(self.clone())))]

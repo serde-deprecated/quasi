@@ -11,13 +11,16 @@
 #![feature(plugin, rustc_private)]
 #![plugin(quasi_macros)]
 
+extern crate aster;
 extern crate syntax;
 extern crate quasi;
 
+use syntax::ast;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
 use syntax::parse;
 use syntax::print::pprust;
+use syntax::owned_slice::OwnedSlice;
 
 fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
     let info = syntax::codemap::ExpnInfo {
@@ -189,4 +192,52 @@ fn test_quote_with_macro() {
     let block = quote_block!(&cx, { value!() }).ok().unwrap();
 
     assert_eq!(pprust::block_to_string(&block), "{ value!() }");
+}
+
+#[test]
+fn test_quote_with_generics_and_where_clause() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let builder = aster::AstBuilder::new();
+    let generics = builder.generics()
+        .ty_param("T")
+            .trait_bound("Clone").build()
+            .build()
+        .build();
+
+    let where_clause = ast::WhereClause {
+        id: ast::DUMMY_NODE_ID,
+        predicates: vec![
+            ast::WherePredicate::BoundPredicate(
+                ast::WhereBoundPredicate {
+                    span: syntax::codemap::DUMMY_SP,
+                    bound_lifetimes: vec![],
+                    bounded_ty: quote_ty!(&cx, T),
+                    bounds: OwnedSlice::from_vec(vec![
+                        ast::TraitTyParamBound(
+                            ast::PolyTraitRef {
+                                bound_lifetimes: vec![],
+                                trait_ref: ast::TraitRef {
+                                    path: builder.path().id("Clone").build(),
+                                    ref_id: ast::DUMMY_NODE_ID,
+                                },
+                                span: syntax::codemap::DUMMY_SP,
+                            },
+                            ast::TraitBoundModifier::None,
+                        ),
+                    ]),
+                }
+            ),
+        ],
+    };
+
+    let item = quote_item!(&cx,
+        impl $generics Clone for Foo $where_clause {}
+    ).unwrap();
+
+    assert_eq!(
+        pprust::item_to_string(&item),
+        "impl <T: Clone> Clone for Foo where T: Clone { }"
+    );
 }
