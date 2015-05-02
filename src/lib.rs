@@ -15,8 +15,7 @@ extern crate syntax;
 use syntax::ast;
 use syntax::codemap::Spanned;
 use syntax::ext::base::ExtCtxt;
-use syntax::parse::token;
-use syntax::parse;
+use syntax::parse::{self, classify, token};
 use syntax::ptr::P;
 use std::rc::Rc;
 
@@ -133,7 +132,16 @@ impl ToTokens for ast::WhereClause {
 
 impl ToTokens for P<ast::Stmt> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![ast::TtToken(self.span, token::Interpolated(token::NtStmt(self.clone())))]
+        let mut tts = vec![
+            ast::TtToken(self.span, token::Interpolated(token::NtStmt(self.clone())))
+        ];
+
+        // Some statements require a trailing semicolon.
+        if classify::stmt_ends_with_semi(&self.node) {
+            tts.push(ast::TtToken(self.span, token::Semi));
+        }
+
+        tts
     }
 }
 

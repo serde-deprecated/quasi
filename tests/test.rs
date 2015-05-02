@@ -241,3 +241,18 @@ fn test_quote_with_generics_and_where_clause() {
         "impl <T: Clone> Clone for Foo where T: Clone { }"
     );
 }
+
+#[test]
+fn test_stmt_semicolons() {
+    let sess = parse::new_parse_sess();
+    let cx = make_ext_ctxt(&sess);
+
+    let stmts = vec![
+        quote_stmt!(&cx, "let x = 1;"),
+        quote_stmt!(&cx, "let x = 2;"),
+    ];
+
+    quote_block!(&cx, {
+        $stmts
+    }).ok().unwrap();
+}
