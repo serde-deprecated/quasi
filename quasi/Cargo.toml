@@ -8,4 +8,4 @@ repository = "https://github.com/erickt/rust-quasi"
 
 [dev-dependencies]
 aster = "*"
-quasi_macros = { version = "*", path = "quasi_macros" }
+quasi_macros = { version = "*", path = "../quasi_macros" }
