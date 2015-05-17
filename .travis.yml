@@ -1,7 +1,12 @@
 language: rust
+rust:
+  - nightly
+  - beta
+  - stable
 script:
-- cargo test
-- cargo doc
+  - (test $TRAVIS_RUST_VERSION == "nightly" || (cd quasi_macros && cargo test)
+  - (test $TRAVIS_RUST_VERSION == "nightly" || (cd quasi_macros && cargo doc)
+  - (cd quasi_tests && cargo test)
 after_success: |
   [ $TRAVIS_BRANCH = "master" ] &&
   [ $TRAVIS_PULL_REQUEST  = false ] &&
