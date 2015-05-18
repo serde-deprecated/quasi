@@ -12,17 +12,14 @@
 
 extern crate syntax;
 
-use syntax::ast;
-use syntax::codemap::Spanned;
-use syntax::ext::base::ExtCtxt;
-use syntax::parse::{self, classify, token};
-use syntax::ptr::P;
 use std::rc::Rc;
 
-use syntax::ast::{TokenTree, Expr};
-
-pub use syntax::parse::new_parser_from_tts;
-pub use syntax::codemap::{BytePos, Span, dummy_spanned, DUMMY_SP};
+use syntax::ast::{self, TokenTree, Generics, Expr};
+use syntax::codemap::{DUMMY_SP, Spanned, dummy_spanned};
+use syntax::ext::base::ExtCtxt;
+use syntax::parse::{self, classify, parse_tts_from_source_str, token};
+use syntax::print::pprust;
+use syntax::ptr::P;
 
 pub trait ToTokens {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree>;
@@ -120,9 +117,6 @@ impl ToTokens for P<ast::TraitItem> {
 
 impl ToTokens for ast::Generics {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-        use syntax::print::pprust;
-        use syntax::parse::parse_tts_from_source_str;
-
         let s = pprust::generics_to_string(self);
 
         parse_tts_from_source_str("<quote expansion".to_string(), s, cx.cfg(), cx.parse_sess())
@@ -131,9 +125,6 @@ impl ToTokens for ast::Generics {
 
 impl ToTokens for ast::WhereClause {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-        use syntax::print::pprust;
-        use syntax::parse::parse_tts_from_source_str;
-
         let s = pprust::to_string(|s| {
             s.print_where_clause(&self)
         });
