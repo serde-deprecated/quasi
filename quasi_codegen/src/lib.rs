@@ -11,6 +11,7 @@
 #![feature(plugin_registrar, unboxed_closures, rustc_private)]
 
 extern crate aster;
+extern crate rustc;
 extern crate syntax;
 
 use syntax::ast;
@@ -28,7 +29,7 @@ use syntax::ptr::P;
 ///  construction of the same token tree, with token::SubstNt interpreted
 ///  as antiquotes (splices).
 
-pub fn expand_quote_tokens<'cx>(
+fn expand_quote_tokens<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree],
@@ -38,7 +39,7 @@ pub fn expand_quote_tokens<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_ty<'cx>(
+fn expand_quote_ty<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -47,7 +48,7 @@ pub fn expand_quote_ty<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_expr<'cx>(
+fn expand_quote_expr<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -56,7 +57,7 @@ pub fn expand_quote_expr<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_stmt<'cx>(
+fn expand_quote_stmt<'cx>(
     cx: &mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -65,7 +66,7 @@ pub fn expand_quote_stmt<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_attr<'cx>(
+fn expand_quote_attr<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -78,7 +79,7 @@ pub fn expand_quote_attr<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_matcher<'cx>(
+fn expand_quote_matcher<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -97,7 +98,7 @@ pub fn expand_quote_matcher<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_pat<'cx>(
+fn expand_quote_pat<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -106,7 +107,7 @@ pub fn expand_quote_pat<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_arm<'cx>(
+fn expand_quote_arm<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -115,7 +116,7 @@ pub fn expand_quote_arm<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_block<'cx>(
+fn expand_quote_block<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -124,7 +125,7 @@ pub fn expand_quote_block<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_item<'cx>(
+fn expand_quote_item<'cx>(
     cx: &mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -134,7 +135,7 @@ pub fn expand_quote_item<'cx>(
     base::MacEager::expr(expanded)
 }
 
-pub fn expand_quote_impl_item<'cx>(
+fn expand_quote_impl_item<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
@@ -145,7 +146,7 @@ pub fn expand_quote_impl_item<'cx>(
 }
 
 /*
-pub fn expand_quote_where_clause<'cx>(cx: &mut ExtCtxt,
+fn expand_quote_where_clause<'cx>(cx: &mut ExtCtxt,
                                       sp: Span,
                                       tts: &[ast::TokenTree])
                                       -> Box<base::MacResult+'cx> {
@@ -655,4 +656,19 @@ fn expand_parse_call(cx: &ExtCtxt,
     } else {
         expand_wrapper(sp, cx_expr, expr, &[&["quasi"]])
     }
+}
+
+pub fn register(reg: &mut rustc::plugin::Registry) {
+    reg.register_macro("quote_tokens", expand_quote_tokens);
+    reg.register_macro("quote_ty", expand_quote_ty);
+    reg.register_macro("quote_expr", expand_quote_expr);
+    reg.register_macro("quote_matcher", expand_quote_matcher);
+    reg.register_macro("quote_stmt", expand_quote_stmt);
+    reg.register_macro("quote_attr", expand_quote_attr);
+    reg.register_macro("quote_pat", expand_quote_pat);
+    reg.register_macro("quote_arm", expand_quote_arm);
+    reg.register_macro("quote_block", expand_quote_block);
+    reg.register_macro("quote_item", expand_quote_item);
+    reg.register_macro("quote_impl_item", expand_quote_impl_item);
+    //reg.register_macro("quote_where_clause", expand_quote_where_clause);
 }
