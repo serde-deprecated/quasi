@@ -12,3 +12,7 @@ plugin = true
 
 [dependencies]
 quasi_codegen = { version = "*", path = "../quasi_codegen" }
+
+[dev-dependencies]
+aster = "*"
+quasi = { version = "*", path = "../quasi" }

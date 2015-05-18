@@ -8,14 +8,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(plugin, rustc_private)]
-#![plugin(quasi_macros)]
-
-extern crate aster;
-extern crate syntax;
-extern crate quasi;
-
 use syntax::ast;
+use syntax::codemap;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
 use syntax::parse;
@@ -23,17 +17,17 @@ use syntax::print::pprust;
 use syntax::owned_slice::OwnedSlice;
 
 fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
-    let info = syntax::codemap::ExpnInfo {
-        call_site: syntax::codemap::DUMMY_SP,
-        callee: syntax::codemap::NameAndSpan {
+    let info = codemap::ExpnInfo {
+        call_site: codemap::DUMMY_SP,
+        callee: codemap::NameAndSpan {
             name: "test".to_string(),
-            format: syntax::codemap::MacroAttribute,
+            format: codemap::MacroAttribute,
             allow_internal_unstable: false,
             span: None
         }
     };
 
-    let cfg = vec![];
+    let cfg = Vec::new();
     let ecfg = expand::ExpansionConfig::default(String::new());
 
     let mut cx = ExtCtxt::new(&sess, cfg, ecfg);
@@ -213,7 +207,7 @@ fn test_quote_with_generics_and_where_clause() {
                 ast::WhereBoundPredicate {
                     span: syntax::codemap::DUMMY_SP,
                     bound_lifetimes: vec![],
-                    bounded_ty: quote_ty!(&cx, T),
+                    bounded_ty: builder.ty().id("T"),
                     bounds: OwnedSlice::from_vec(vec![
                         ast::TraitTyParamBound(
                             ast::PolyTraitRef {
@@ -247,10 +241,9 @@ fn test_stmt_semicolons() {
     let sess = parse::new_parse_sess();
     let cx = make_ext_ctxt(&sess);
 
-    let stmts = vec![
-        quote_stmt!(&cx, "let x = 1;"),
-        quote_stmt!(&cx, "let x = 2;"),
-    ];
+    let mut stmts = Vec::new();
+    stmts.push(quote_stmt!(&cx, "let x = 1;"));
+    stmts.push(quote_stmt!(&cx, "let y = 2;"));
 
     quote_block!(&cx, {
         $stmts
