@@ -173,7 +173,7 @@ macro_rules! impl_to_tokens_slice {
                 let mut v = vec![];
                 for (i, x) in self.iter().enumerate() {
                     if i > 0 {
-                        v.push_all(&$sep);
+                        v.extend($sep.iter().cloned());
                     }
                     v.extend(x.to_tokens(cx));
                 }
