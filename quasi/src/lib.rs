@@ -34,6 +34,12 @@ impl ToTokens for TokenTree {
     }
 }
 
+impl<'a, T: ToTokens> ToTokens for &'a T {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        (**self).to_tokens(cx)
+    }
+}
+
 impl<'a, T: ToTokens> ToTokens for &'a [T] {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         self.iter()
@@ -82,9 +88,15 @@ impl ToTokens for ast::Ty {
     }
 }
 
-impl ToTokens for ast::Block {
+impl ToTokens for P<ast::Ty> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![ast::TtToken(self.span, token::Interpolated(token::NtBlock(P(self.clone()))))]
+        vec![ast::TtToken(self.span, token::Interpolated(token::NtTy(self.clone())))]
+    }
+}
+
+impl ToTokens for P<ast::Block> {
+    fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
+        vec![ast::TtToken(self.span, token::Interpolated(token::NtBlock(self.clone())))]
     }
 }
 
