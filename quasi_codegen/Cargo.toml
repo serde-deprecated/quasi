@@ -1,12 +1,13 @@
 [package]
 name = "quasi_codegen"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
 repository = "https://github.com/erickt/rust-quasi"
 
 [features]
+default = ["with-syntex"]
 with-syntex = ["syntex", "syntex_syntax", "aster/with-syntex"]
 
 [dependencies]

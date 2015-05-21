@@ -8,7 +8,7 @@ repository = "https://github.com/erickt/rust-quasi"
 build = "build.rs"
 
 [build-dependencies]
-quasi_codegen = { version = "*", path = "../quasi_codegen", features = ["with-syntex"] }
+quasi_codegen = { version = "*", path = "../quasi_codegen" }
 syntex = { version = "*" }
 
 [dev-dependencies]
