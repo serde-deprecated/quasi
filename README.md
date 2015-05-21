@@ -1,4 +1,12 @@
-Rust quasi-quoting macro.
+Rust Quasi-Quoting Syntax Extension
+===================================
+
+[![Build Status](https://api.travis-ci.org/erickt/rust-quasi.png?branch=master)](https://travis-ci.org/erickt/rust-quasi)
+[![Latest Version](https://img.shields.io/crates/v/quasi.svg)](https://crates.io/crates/quasi)
+
+Quasi is a quasi-quotation macro library that allows you produce Rust AST from
+Rust syntax. Furthermore, it allows you to easily splice local variables into
+the quoted string in order to have it inserted into the produced AST.
 
 Example
 -------
@@ -21,7 +29,8 @@ fn make_ext_ctxt(...) -> ExtCtxt {
 
 fn main() {
     let cx = make_ext_ctxt(...);
-    let expr = quote_expr!(cx, 1 + 2);
+    let y = 2;
+    let expr = quote_expr!(cx, 1 + $y);
 
     // prints `1 + 2`.
     println!("{}", syntax::pprint::expr_to_string(&expr));
