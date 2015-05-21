@@ -13,8 +13,7 @@ matrix:
   - rust: nightly
     env: CRATE=quasi_macros
 script:
-- cd $CRATE && cargo test --verbose
-- cd $CRATE && cargo doc --no-deps
+- (cd $CRATE && cargo test --verbose)
 after_success: |
   [ $TRAVIS_BRANCH = "master" ] &&
   [ $TRAVIS_PULL_REQUEST  = false ] &&
