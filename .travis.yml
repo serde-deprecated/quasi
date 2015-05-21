@@ -8,7 +8,6 @@ env:
   - secure: VdytY7YA8W4q146sMv7vc7G8UBSmEtQC4NImNicffnXXVu/ghbKu+/6knmjDc97mjiz7AdredJzE/lUI3Np9PqONvtMFv8Mzcbcm0vglybIFxEGgNz82dr9wzZ6UnWZu1vULGVnKi1N2sXwYsourEex6Ec4rp89vXshQxYV58tI=
   matrix:
   - CRATE=quasi_codegen
-  - CRATE=quasi_macros
 matrix:
   include:
   - rust: nightly
