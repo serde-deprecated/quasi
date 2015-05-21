@@ -38,7 +38,7 @@ fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
 
 #[test]
 fn test_quote_tokens() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let tts = quote_tokens!(&cx, (+ 2 3));
@@ -47,7 +47,7 @@ fn test_quote_tokens() {
 
 #[test]
 fn test_quote_ty() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let ty = quote_ty!(&cx, isize);
@@ -56,7 +56,7 @@ fn test_quote_ty() {
 
 #[test]
 fn test_quote_expr() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let expr = quote_expr!(&cx, 23);
@@ -69,7 +69,7 @@ fn test_quote_expr() {
 
 #[test]
 fn test_quote_stmt() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let stmt = quote_stmt!(&cx, let x = 20;).unwrap();
@@ -78,7 +78,7 @@ fn test_quote_stmt() {
 
 #[test]
 fn test_quote_pat() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let pat = quote_pat!(&cx, Some(_));
@@ -87,7 +87,7 @@ fn test_quote_pat() {
 
 #[test]
 fn test_quote_arm() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let arm = quote_arm!(&cx, (ref x, ref y) => (x, y),);
@@ -96,7 +96,7 @@ fn test_quote_arm() {
 
 #[test]
 fn test_quote_attr() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let attr = quote_attr!(&cx, #![cfg(foo = "bar")]);
@@ -107,7 +107,7 @@ fn test_quote_attr() {
 
 #[test]
 fn test_quote_block() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let block = quote_block!(&cx, {
@@ -123,7 +123,7 @@ fn test_quote_block() {
 
 #[test]
 fn test_quote_item() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let item = quote_item!(&cx, static x : int = 10;).unwrap();
@@ -132,7 +132,7 @@ fn test_quote_item() {
 
 #[test]
 fn test_quote_impl_item() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let impl_item = quote_impl_item!(&cx, fn method(&mut self, x: u32) -> u32 { x });
@@ -145,7 +145,7 @@ fn test_quote_impl_item() {
 
 #[test]
 fn test_quote_matcher() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let tts = quote_matcher!(&cx, $($foo:tt,)* bar);
@@ -155,7 +155,7 @@ fn test_quote_matcher() {
 /*
 #[test]
 fn test_quote_where_clause() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let where_clause = quote_where_clause!(&cx, where A, B: T).ok().unwrap();
@@ -169,7 +169,7 @@ fn test_quote_where_clause() {
 
 #[test]
 fn test_quote_with_macro() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let block = quote_block!(&cx, {
@@ -190,7 +190,7 @@ fn test_quote_with_macro() {
 
 #[test]
 fn test_quote_with_generics_and_where_clause() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let builder = aster::AstBuilder::new();
@@ -238,7 +238,7 @@ fn test_quote_with_generics_and_where_clause() {
 
 #[test]
 fn test_stmt_semicolons() {
-    let sess = parse::new_parse_sess();
+    let sess = parse::ParseSess::new();
     let cx = make_ext_ctxt(&sess);
 
     let mut stmts = Vec::new();
