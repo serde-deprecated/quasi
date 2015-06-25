@@ -123,7 +123,7 @@ impl ToTokens for ast::Generics {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         let s = pprust::generics_to_string(self);
 
-        parse_tts_from_source_str("<quote expansion".to_string(), s, cx.cfg(), cx.parse_sess())
+        parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess())
     }
 }
 
@@ -133,7 +133,7 @@ impl ToTokens for ast::WhereClause {
             s.print_where_clause(&self)
         });
 
-        parse_tts_from_source_str("<quote expansion".to_string(), s, cx.cfg(), cx.parse_sess())
+        parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess())
     }
 }
 
