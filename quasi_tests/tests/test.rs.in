@@ -179,13 +179,13 @@ fn test_quote_with_macro() {
 
     assert_eq!(
         pprust::block_to_string(&block),
-        "{\n    macro_rules! value((  ) => 6);\n    value!()\n}");
+        "{\n    macro_rules! value((  ) => 6);\n    value!{ }\n}");
 
     // Make sure we don't expand macros in the quote.
     macro_rules! value { () => 5 }
     let block = quote_block!(&cx, { value!() }).ok().unwrap();
 
-    assert_eq!(pprust::block_to_string(&block), "{ value!() }");
+    assert_eq!(pprust::block_to_string(&block), "{ value!{ } }");
 }
 
 #[test]
