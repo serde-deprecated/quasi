@@ -1,30 +1,63 @@
 language: rust
+sudo: false
+
 rust:
-- stable
-- beta
-- nightly
+  - stable
+  - beta
+  - nightly
+
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+
+before_script:
+- |
+    pip install 'travis-cargo<0.2' --user &&
+    export PATH=$HOME/.local/bin:$PATH
+
+
+script:
+  - |
+    (
+    cd quasi &&
+    travis-cargo build -- --features with-syntex &&
+    travis-cargo test -- --features with-syntex &&
+    travis-cargo --only nightly build &&
+    travis-cargo --only nightly test &&
+    travis-cargo doc
+    )
+  - |
+    (
+    cd quasi_macros &&
+    travis-cargo --only nightly build &&
+    travis-cargo --only nightly test
+    )
+  - |
+    (
+    cd quasi_tests &&
+    travis-cargo build &&
+    travis-cargo test
+    )
+
+after_success:
+  - |
+    (
+    cd quasi &&
+    travis-cargo --only stable doc-upload
+    )
+  - |
+    (
+    cd quasi_tests &&
+    travis-cargo --only stable coveralls --no-sudo
+    )
+
 env:
   global:
-  - secure: VdytY7YA8W4q146sMv7vc7G8UBSmEtQC4NImNicffnXXVu/ghbKu+/6knmjDc97mjiz7AdredJzE/lUI3Np9PqONvtMFv8Mzcbcm0vglybIFxEGgNz82dr9wzZ6UnWZu1vULGVnKi1N2sXwYsourEex6Ec4rp89vXshQxYV58tI=
-  matrix:
-  - CRATE=quasi_codegen
-matrix:
-  include:
-  - rust: nightly
-    env: CRATE=quasi_macros
-script:
-- (cd $CRATE && cargo test --verbose)
-after_success: |
-  [ $TRAVIS_BRANCH = "master" ] &&
-  [ $TRAVIS_PULL_REQUEST  = false ] &&
-  mkdir -p target/doc &&
-  (cd quasi && cargo doc --no-deps) &&
-  (cd quasi_codegen && cargo doc --no-deps) &&
-  (cd quasi_macros && cargo doc --no-deps) &&
-  cp -r quasi/target/doc target/doc/quasi &&
-  cp -r quasi_codegen/target/doc target/doc/quasi_codegen &&
-  cp -r quasi_macros/target/doc target/doc/quasi_macro &&
-  echo "<meta http-equiv=refresh content=0;url=`echo $TRAVIS_REPO_SLUG | cut -d '/' -f 2`/index.html>" > target/doc/index.html &&
-  sudo pip install ghp-import &&
-  ghp-import -n target/doc &&
-  git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+    # override the default `--features unstable` used for the nightly branch (optional)
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+
+    # encrypted github token for doc upload (see `GH_TOKEN` link above)
+    - secure: VdytY7YA8W4q146sMv7vc7G8UBSmEtQC4NImNicffnXXVu/ghbKu+/6knmjDc97mjiz7AdredJzE/lUI3Np9PqONvtMFv8Mzcbcm0vglybIFxEGgNz82dr9wzZ6UnWZu1vULGVnKi1N2sXwYsourEex6Ec4rp89vXshQxYV58tI=
