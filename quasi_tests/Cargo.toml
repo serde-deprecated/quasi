@@ -14,5 +14,5 @@ syntex = { version = "*" }
 [dev-dependencies]
 aster = { version = "*", features = ["with-syntex"] }
 quasi = { version = "*", path = "../quasi", features = ["with-syntex"] }
-syntex = { version = "*" }
-syntex_syntax = { version = "*" }
+syntex = { version = ">= 0.11.0" }
+syntex_syntax = { version = ">= 0.13.0" }
