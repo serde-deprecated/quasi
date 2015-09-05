@@ -1,7 +1,7 @@
 Rust Quasi-Quoting Syntax Extension
 ===================================
 
-[![Build Status](https://api.travis-ci.org/erickt/rust-quasi.png?branch=master)](https://travis-ci.org/erickt/rust-quasi)
+[![Build Status](https://api.travis-ci.org/serde-rs/quasi.png?branch=master)](https://travis-ci.org/serde-rs/quasi)
 [![Latest Version](https://img.shields.io/crates/v/quasi.svg)](https://crates.io/crates/quasi)
 
 Quasi is a quasi-quotation macro library that allows you produce Rust AST from
