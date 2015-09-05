@@ -332,13 +332,13 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
             mk_lit!("Float", suf, e_fident)
         }
 
-        token::Literal(token::Binary(ident), suf) => {
-            mk_lit!("Binary", suf, mk_name(builder, ident.ident()))
+        token::Literal(token::ByteStr(ident), suf) => {
+            mk_lit!("ByteStr", suf, mk_name(builder, ident.ident()))
         }
 
-        token::Literal(token::BinaryRaw(ident, n), suf) => {
+        token::Literal(token::ByteStrRaw(ident, n), suf) => {
             mk_lit!(
-                "BinaryRaw",
+                "ByteStrRaw",
                 suf,
                 mk_name(builder, ident.ident()),
                 builder.expr().usize(n))

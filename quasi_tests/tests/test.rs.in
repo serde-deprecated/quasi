@@ -12,16 +12,19 @@ use syntax::ast;
 use syntax::codemap;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
+use syntax::feature_gate::GatedCfg;
 use syntax::parse;
 use syntax::print::pprust;
 use syntax::owned_slice::OwnedSlice;
 
-fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
+use aster::name::ToName;
+
+fn make_ext_ctxt<'a>(sess: &'a parse::ParseSess,
+                     feature_gated_cfgs: &'a mut Vec<GatedCfg>) -> ExtCtxt<'a> {
     let info = codemap::ExpnInfo {
         call_site: codemap::DUMMY_SP,
         callee: codemap::NameAndSpan {
-            name: "test".to_string(),
-            format: codemap::MacroAttribute,
+            format: codemap::MacroAttribute("test".to_name()),
             allow_internal_unstable: false,
             span: None
         }
@@ -30,7 +33,7 @@ fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
     let cfg = Vec::new();
     let ecfg = expand::ExpansionConfig::default(String::new());
 
-    let mut cx = ExtCtxt::new(&sess, cfg, ecfg);
+    let mut cx = ExtCtxt::new(&sess, cfg, ecfg, feature_gated_cfgs);
     cx.bt_push(info);
 
     cx
@@ -39,7 +42,8 @@ fn make_ext_ctxt(sess: &parse::ParseSess) -> ExtCtxt {
 #[test]
 fn test_quote_tokens() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let tts = quote_tokens!(&cx, (+ 2 3));
     assert_eq!(pprust::tts_to_string(&tts), "( + 2 3 )");
@@ -48,7 +52,8 @@ fn test_quote_tokens() {
 #[test]
 fn test_quote_ty() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let ty = quote_ty!(&cx, isize);
     assert_eq!(pprust::ty_to_string(&ty), "isize");
@@ -57,7 +62,8 @@ fn test_quote_ty() {
 #[test]
 fn test_quote_expr() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let expr = quote_expr!(&cx, 23);
     assert_eq!(pprust::expr_to_string(&expr), "23");
@@ -70,7 +76,8 @@ fn test_quote_expr() {
 #[test]
 fn test_quote_stmt() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let stmt = quote_stmt!(&cx, let x = 20;).unwrap();
     assert_eq!(pprust::stmt_to_string(&stmt), "let x = 20;");
@@ -79,7 +86,8 @@ fn test_quote_stmt() {
 #[test]
 fn test_quote_pat() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let pat = quote_pat!(&cx, Some(_));
     assert_eq!(pprust::pat_to_string(&pat), "Some(_)");
@@ -88,7 +96,8 @@ fn test_quote_pat() {
 #[test]
 fn test_quote_arm() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let arm = quote_arm!(&cx, (ref x, ref y) => (x, y),);
     assert_eq!(pprust::arm_to_string(&arm), " (ref x, ref y) => (x, y),");
@@ -97,7 +106,8 @@ fn test_quote_arm() {
 #[test]
 fn test_quote_attr() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let attr = quote_attr!(&cx, #![cfg(foo = "bar")]);
     assert_eq!(
@@ -108,7 +118,8 @@ fn test_quote_attr() {
 #[test]
 fn test_quote_block() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let block = quote_block!(&cx, {
         let x = 5;
@@ -124,7 +135,8 @@ fn test_quote_block() {
 #[test]
 fn test_quote_item() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let item = quote_item!(&cx, static x : int = 10;).unwrap();
     assert_eq!(pprust::item_to_string(&item), "static x: int = 10;");
@@ -133,7 +145,8 @@ fn test_quote_item() {
 #[test]
 fn test_quote_impl_item() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let impl_item = quote_impl_item!(&cx, fn method(&mut self, x: u32) -> u32 { x });
     let impl_item = impl_item.ok().unwrap();
@@ -146,7 +159,8 @@ fn test_quote_impl_item() {
 #[test]
 fn test_quote_matcher() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let tts = quote_matcher!(&cx, $($foo:tt,)* bar);
     assert_eq!(pprust::tts_to_string(&tts), "$($foo:tt,)* bar");
@@ -156,7 +170,8 @@ fn test_quote_matcher() {
 #[test]
 fn test_quote_where_clause() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let where_clause = quote_where_clause!(&cx, where A, B: T).ok().unwrap();
 
@@ -170,28 +185,39 @@ fn test_quote_where_clause() {
 #[test]
 fn test_quote_with_macro() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let block = quote_block!(&cx, {
         macro_rules! value { () => 6 }
         value!()
     }).ok().unwrap();
 
-    assert_eq!(
-        pprust::block_to_string(&block),
-        "{\n    macro_rules! value((  ) => 6);\n    value!{ }\n}");
+    // FIXME: Rust 1.2 and nightly pretty print slightly differently.
+    // assert_eq!(
+    //    pprust::block_to_string(&block),
+    //    "{\n    macro_rules! value((  ) => 6);\n    value!()\n}");
+
+    let s = pprust::block_to_string(&block);
+    assert!(
+        s == "{\n    macro_rules! value((  ) => 6);\n    value!()\n}" ||
+        s == "{\n    macro_rules! value((  ) => 6);\n    value!{ }\n}");
 
     // Make sure we don't expand macros in the quote.
     macro_rules! value { () => 5 }
     let block = quote_block!(&cx, { value!() }).ok().unwrap();
 
-    assert_eq!(pprust::block_to_string(&block), "{ value!{ } }");
+    // FIXME: Rust 1.2 and nightly pretty print slightly differently.
+    //assert_eq!(pprust::block_to_string(&block), "{ value!() }");
+    let s = pprust::block_to_string(&block);
+    assert!(s == "{ value!() }" || s == "{ value!{ } }");
 }
 
 #[test]
 fn test_quote_with_generics_and_where_clause() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let builder = aster::AstBuilder::new();
     let generics = builder.generics()
@@ -239,7 +265,8 @@ fn test_quote_with_generics_and_where_clause() {
 #[test]
 fn test_stmt_semicolons() {
     let sess = parse::ParseSess::new();
-    let cx = make_ext_ctxt(&sess);
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
 
     let mut stmts = Vec::new();
     stmts.push(quote_stmt!(&cx, "let x = 1;"));
