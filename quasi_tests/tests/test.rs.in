@@ -16,6 +16,7 @@ use syntax::feature_gate::GatedCfg;
 use syntax::parse;
 use syntax::print::pprust;
 use syntax::owned_slice::OwnedSlice;
+use syntax::print::pprust::PrintState;
 
 use aster::name::ToName;
 

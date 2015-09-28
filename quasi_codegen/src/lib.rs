@@ -122,7 +122,7 @@ fn expand_quote_matcher<'cx>(
     let block = builder.expr().block()
         .with_stmts(vector)
         .expr().id("tt");
-    
+
     let expanded = expand_wrapper(sp, cx_expr, block);
     base::MacEager::expr(expanded)
 }
@@ -313,46 +313,46 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
         }
 
         token::Literal(token::Byte(i), suf) => {
-            let e_byte = mk_name(builder, i.ident());
+            let e_byte = mk_name(builder, i.as_str());
             mk_lit!("Byte", suf, e_byte)
         }
 
         token::Literal(token::Char(i), suf) => {
-            let e_char = mk_name(builder, i.ident());
+            let e_char = mk_name(builder, i.as_str());
             mk_lit!("Char", suf, e_char)
         }
 
         token::Literal(token::Integer(i), suf) => {
-            let e_int = mk_name(builder, i.ident());
+            let e_int = mk_name(builder, i.as_str());
             mk_lit!("Integer", suf, e_int)
         }
 
         token::Literal(token::Float(fident), suf) => {
-            let e_fident = mk_name(builder, fident.ident());
+            let e_fident = mk_name(builder, fident.as_str());
             mk_lit!("Float", suf, e_fident)
         }
 
         token::Literal(token::ByteStr(ident), suf) => {
-            mk_lit!("ByteStr", suf, mk_name(builder, ident.ident()))
+            mk_lit!("ByteStr", suf, mk_name(builder, ident.as_str()))
         }
 
         token::Literal(token::ByteStrRaw(ident, n), suf) => {
             mk_lit!(
                 "ByteStrRaw",
                 suf,
-                mk_name(builder, ident.ident()),
+                mk_name(builder, ident.as_str()),
                 builder.expr().usize(n))
         }
 
         token::Literal(token::Str_(ident), suf) => {
-            mk_lit!("Str_", suf, mk_name(builder, ident.ident()))
+            mk_lit!("Str_", suf, mk_name(builder, ident.as_str()))
         }
 
         token::Literal(token::StrRaw(ident, n), suf) => {
             mk_lit!(
                 "StrRaw",
                 suf,
-                mk_name(builder, ident.ident()),
+                mk_name(builder, ident.as_str()),
                 builder.expr().usize(n))
         }
 
@@ -521,7 +521,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
             let stmt_let_tt = builder.stmt().let_()
                 .mut_id("tt")
                 .expr().vec().build();
-            
+
             let mut tts_stmts = vec![stmt_let_tt];
             tts_stmts.extend(statements_mk_tts(&seq.tts[..], matcher).into_iter());
 
