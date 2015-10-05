@@ -201,7 +201,7 @@ impl ToTokens for ast::Attribute {
         let mut r = vec![];
         // FIXME: The spans could be better
         r.push(ast::TtToken(self.span, token::Pound));
-        if self.node.style == ast::AttrInner {
+        if self.node.style == ast::AttrStyle::Inner {
             r.push(ast::TtToken(self.span, token::Not));
         }
         r.push(ast::TtDelimited(self.span, Rc::new(ast::Delimited {
