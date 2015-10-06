@@ -27,7 +27,7 @@ script:
     travis-cargo test -- --features with-syntex &&
     travis-cargo --only nightly build &&
     travis-cargo --only nightly test &&
-    travis-cargo doc --features with-syntex
+    travis-cargo doc -- --features with-syntex
     )
   - |
     (
