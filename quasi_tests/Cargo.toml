@@ -12,7 +12,7 @@ quasi_codegen = { version = "*", path = "../quasi_codegen" }
 syntex = { version = "^0.17.0" }
 
 [dev-dependencies]
-aster = { version = "^0.5.0", features = ["with-syntex"] }
+aster = { version = "^0.6.0", features = ["with-syntex"] }
 quasi = { version = "*", path = "../quasi", features = ["with-syntex"] }
 syntex = { version = "^0.17.0" }
-syntex_syntax = { version = "^0.18.0" }
+syntex_syntax = { version = "^0.19.0" }
