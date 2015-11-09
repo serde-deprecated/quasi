@@ -57,7 +57,7 @@ fn expand_quote_ty<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_ty"],
+        &["syntax", "parse", "parser", "Parser", "parse_ty_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -71,7 +71,7 @@ fn expand_quote_expr<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_expr"],
+        &["syntax", "parse", "parser", "Parser", "parse_expr_panic"],
         Vec::new(),
         tts);
     base::MacEager::expr(expanded)
@@ -85,7 +85,7 @@ fn expand_quote_stmt<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_stmt"],
+        &["syntax", "parse", "parser", "Parser", "parse_stmt_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -101,7 +101,7 @@ fn expand_quote_attr<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "attr", "ParserAttr", "parse_attribute"],
+        &["syntax", "parse", "parser", "Parser", "parse_attribute_panic"],
         vec![builder.expr().bool(true)],
         tts);
 
@@ -135,7 +135,7 @@ fn expand_quote_pat<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_pat"],
+        &["syntax", "parse", "parser", "Parser", "parse_pat_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -149,7 +149,7 @@ fn expand_quote_arm<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_arm"],
+        &["syntax", "parse", "parser", "Parser", "parse_arm_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -177,7 +177,7 @@ fn expand_quote_item<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_item"],
+        &["syntax", "parse", "parser", "Parser", "parse_item_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -228,6 +228,13 @@ fn mk_ast_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
     builder.expr().path()
         .global()
         .ids(&["syntax", "ast", name])
+        .build()
+}
+
+fn mk_tt_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
+    builder.expr().path()
+        .global()
+        .ids(&["syntax", "ast", "TokenTree", name])
         .build()
 }
 
@@ -452,7 +459,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
     let builder = aster::AstBuilder::new();
 
     match *tt {
-        ast::TtToken(sp, SubstNt(ident, _)) => {
+        ast::TokenTree::Token(sp, SubstNt(ident, _)) => {
             // tt.extend($ident.to_tokens(ext_cx).into_iter())
 
             let builder = builder.clone().span(sp);
@@ -479,18 +486,18 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
 
             vec![builder.stmt().build_expr(e_push)]
         }
-        ref tt @ ast::TtToken(_, MatchNt(..)) if !matcher => {
+        ref tt @ ast::TokenTree::Token(_, MatchNt(..)) if !matcher => {
             let mut seq = vec![];
             for i in 0..tt.len() {
                 seq.push(tt.get_tt(i));
             }
             statements_mk_tts(&seq[..], matcher)
         }
-        ast::TtToken(sp, ref tok) => {
+        ast::TokenTree::Token(sp, ref tok) => {
             let builder = builder.clone().span(sp);
 
             let e_tok = builder.expr().call()
-                .build(mk_ast_path(&builder, "TtToken"))
+                .build(mk_tt_path(&builder, "Token"))
                 .arg().id("_sp")
                 .with_arg(expr_mk_token(&builder, tok))
                 .build();
@@ -502,16 +509,16 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
 
             vec![builder.stmt().build_expr(e_push)]
         },
-        ast::TtDelimited(_, ref delimed) => {
+        ast::TokenTree::Delimited(_, ref delimed) => {
             statements_mk_tt(&delimed.open_tt(), matcher).into_iter()
                 .chain(delimed.tts.iter()
                                   .flat_map(|tt| statements_mk_tt(tt, matcher).into_iter()))
                 .chain(statements_mk_tt(&delimed.close_tt(), matcher).into_iter())
                 .collect()
         },
-        ast::TtSequence(sp, ref seq) => {
+        ast::TokenTree::Sequence(sp, ref seq) => {
             if !matcher {
-                panic!("TtSequence in quote!");
+                panic!("TokenTree::Sequence in quote!");
             }
 
             let builder = builder.clone().span(sp);
@@ -551,7 +558,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
                 .build(e_seq_struct);
 
             let e_tok = builder.expr().call()
-                .build(mk_ast_path(&builder, "TtSequence"))
+                .build(mk_tt_path(&builder, "Sequence"))
                 .arg().build(e_sp)
                 .arg().build(e_rc_new)
                 .build();
