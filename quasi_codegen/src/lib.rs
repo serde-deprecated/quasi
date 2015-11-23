@@ -57,7 +57,7 @@ fn expand_quote_ty<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_ty_panic"],
+        &["quasi", "parse_ty_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -71,7 +71,7 @@ fn expand_quote_expr<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_expr_panic"],
+        &["quasi", "parse_expr_panic"],
         Vec::new(),
         tts);
     base::MacEager::expr(expanded)
@@ -85,7 +85,7 @@ fn expand_quote_stmt<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_stmt_panic"],
+        &["quasi", "parse_stmt_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -101,7 +101,7 @@ fn expand_quote_attr<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_attribute_panic"],
+        &["quasi", "parse_attribute_panic"],
         vec![builder.expr().bool(true)],
         tts);
 
@@ -135,7 +135,7 @@ fn expand_quote_pat<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_pat_panic"],
+        &["quasi", "parse_pat_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -149,7 +149,7 @@ fn expand_quote_arm<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_arm_panic"],
+        &["quasi", "parse_arm_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -177,7 +177,7 @@ fn expand_quote_item<'cx>(
     let expanded = expand_parse_call(
         cx,
         sp,
-        &["syntax", "parse", "parser", "Parser", "parse_item_panic"],
+        &["quasi", "parse_item_panic"],
         vec!(),
         tts);
     base::MacEager::expr(expanded)
@@ -583,7 +583,10 @@ fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[ast::TokenTree])
     let mut p = cx.new_parser_from_tts(tts);
     p.quote_depth += 1;
 
-    let cx_expr = p.parse_expr_panic();
+    let cx_expr = match p.parse_expr() {
+        Ok(expr) => expr,
+        Err(err) => panic!(err),
+    };
     if !p.eat(&token::Comma).ok().unwrap() {
         let _ = p.fatal("expected token `,`");
     }

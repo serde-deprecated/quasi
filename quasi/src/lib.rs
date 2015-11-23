@@ -22,6 +22,7 @@ use syntax::ast::{self, TokenTree, Generics, Expr};
 use syntax::codemap::{DUMMY_SP, Spanned, dummy_spanned};
 use syntax::ext::base::ExtCtxt;
 use syntax::parse::{self, classify, parse_tts_from_source_str, token};
+use syntax::parse::parser::Parser;
 use syntax::print::pprust;
 use syntax::ptr::P;
 
@@ -325,4 +326,41 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
                                          self.cfg(),
                                          self.parse_sess())
     }
+}
+
+macro_rules! panictry {
+    ($e:expr) => ({
+        match $e {
+            Ok(e) => e,
+            Err(err) => panic!(err)
+        }
+    })
+}
+
+pub fn parse_expr_panic(parser: &mut Parser) -> P<ast::Expr> {
+        panictry!(parser.parse_expr())
+}
+
+pub fn parse_item_panic(parser: &mut Parser) -> Option<P<ast::Item>> {
+        panictry!(parser.parse_item())
+}
+
+pub fn parse_pat_panic(parser: &mut Parser) -> P<ast::Pat> {
+        panictry!(parser.parse_pat())
+}
+
+pub fn parse_arm_panic(parser: &mut Parser) -> ast::Arm {
+        panictry!(parser.parse_arm())
+}
+
+pub fn parse_ty_panic(parser: &mut Parser) -> P<ast::Ty> {
+        panictry!(parser.parse_ty())
+}
+
+pub fn parse_stmt_panic(parser: &mut Parser) -> Option<P<ast::Stmt>> {
+    panictry!(parser.parse_stmt())
+}
+
+pub fn parse_attribute_panic(parser: &mut Parser, permit_inner: bool) -> ast::Attribute {
+        panictry!(parser.parse_attribute(permit_inner))
 }

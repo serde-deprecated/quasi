@@ -205,13 +205,13 @@ fn test_quote_with_macro() {
         s == "{\n    macro_rules! value((  ) => 6);\n    value!{ }\n}");
 
     // Make sure we don't expand macros in the quote.
-    macro_rules! value { () => 5 }
+    macro_rules! value { () => { 5i32 } }
     let block = quote_block!(&cx, { value!() }).ok().unwrap();
 
     // FIXME: Rust 1.2 and nightly pretty print slightly differently.
-    //assert_eq!(pprust::block_to_string(&block), "{ value!() }");
-    let s = pprust::block_to_string(&block);
-    assert!(s == "{ value!() }" || s == "{ value!{ } }");
+    assert_eq!(pprust::block_to_string(&block), "{ value!() }");
+    //let s = pprust::block_to_string(&block);
+    //assert!(s == "{ value!() }" || s == "{ value!{ } }");
 }
 
 #[test]
