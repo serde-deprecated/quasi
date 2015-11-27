@@ -11,10 +11,10 @@
 #![feature(plugin_registrar, unboxed_closures, rustc_private)]
 
 extern crate quasi_codegen;
-extern crate rustc;
+extern crate rustc_plugin;
 
 #[plugin_registrar]
 #[doc(hidden)]
-pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
+pub fn plugin_registrar(reg: &mut rustc_plugin::Registry) {
     quasi_codegen::register(reg);
 }

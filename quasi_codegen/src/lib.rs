@@ -22,7 +22,7 @@ extern crate syntex_syntax as syntax;
 extern crate syntax;
 
 #[cfg(not(feature = "with-syntex"))]
-extern crate rustc;
+extern crate rustc_plugin;
 
 use syntax::ast;
 use syntax::codemap::Span;
@@ -739,7 +739,7 @@ pub fn register(reg: &mut syntex::Registry) {
 }
 
 #[cfg(not(feature = "syntex"))]
-pub fn register(reg: &mut rustc::plugin::Registry) {
+pub fn register(reg: &mut rustc_plugin::Registry) {
     reg.register_macro("quote_tokens", expand_quote_tokens);
     reg.register_macro("quote_ty", expand_quote_ty);
     reg.register_macro("quote_expr", expand_quote_expr);
