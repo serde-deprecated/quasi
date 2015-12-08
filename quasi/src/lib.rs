@@ -241,6 +241,7 @@ impl ToTokens for ast::Lit {
             id: ast::DUMMY_NODE_ID,
             node: ast::ExprLit(P(self.clone())),
             span: DUMMY_SP,
+            attrs: None,
         }).to_tokens(cx)
     }
 }
