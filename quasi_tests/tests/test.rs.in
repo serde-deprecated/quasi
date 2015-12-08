@@ -12,7 +12,7 @@ use syntax::ast;
 use syntax::codemap;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
-use syntax::feature_gate::GatedCfg;
+use syntax::feature_gate::GatedCfgAttr;
 use syntax::parse;
 use syntax::print::pprust;
 use syntax::owned_slice::OwnedSlice;
@@ -21,7 +21,7 @@ use syntax::print::pprust::PrintState;
 use aster::name::ToName;
 
 fn make_ext_ctxt<'a>(sess: &'a parse::ParseSess,
-                     feature_gated_cfgs: &'a mut Vec<GatedCfg>) -> ExtCtxt<'a> {
+                     feature_gated_cfgs: &'a mut Vec<GatedCfgAttr>) -> ExtCtxt<'a> {
     let info = codemap::ExpnInfo {
         call_site: codemap::DUMMY_SP,
         callee: codemap::NameAndSpan {
