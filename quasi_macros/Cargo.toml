@@ -1,6 +1,6 @@
 [package]
 name = "quasi_macros"
-version = "0.3.10"
+version = "0.3.11"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
@@ -14,5 +14,5 @@ plugin = true
 quasi_codegen = { version = "*", path = "../quasi_codegen", default-features = false }
 
 [dev-dependencies]
-aster = "^0.9.0"
+aster = "^0.9.2"
 quasi = { version = "*", path = "../quasi" }
