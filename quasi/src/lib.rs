@@ -18,7 +18,7 @@ extern crate syntax;
 
 use std::rc::Rc;
 
-use syntax::ast::{self, TokenTree, Generics, Expr};
+use syntax::ast::{self, TokenTree};
 use syntax::codemap::{DUMMY_SP, Spanned, dummy_spanned};
 use syntax::ext::base::ExtCtxt;
 use syntax::parse::{self, classify, parse_tts_from_source_str, token};
