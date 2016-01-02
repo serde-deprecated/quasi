@@ -1,6 +1,6 @@
 [package]
 name = "quasi_codegen"
-version = "0.3.11"
+version = "0.3.12"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
@@ -12,5 +12,5 @@ with-syntex = ["syntex", "syntex_syntax", "aster/with-syntex"]
 
 [dependencies]
 aster = { version = "^0.9.2", default-features = false }
-syntex = { version = "^0.24.0", optional = true }
-syntex_syntax = { version = "^0.24.0", optional = true }
+syntex = { version = "^0.25.0", optional = true }
+syntex_syntax = { version = "^0.25.0", optional = true }
