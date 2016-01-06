@@ -15,9 +15,11 @@ extern crate aster;
 #[cfg(feature = "with-syntex")]
 extern crate syntex;
 
+#[macro_use]
 #[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
 
+#[macro_use]
 #[cfg(not(feature = "with-syntex"))]
 extern crate syntax;
 
@@ -583,15 +585,12 @@ fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[ast::TokenTree])
     let mut p = cx.new_parser_from_tts(tts);
     p.quote_depth += 1;
 
-    let cx_expr = match p.parse_expr() {
-        Ok(expr) => expr,
-        Err(err) => panic!(err),
-    };
-    if !p.eat(&token::Comma).ok().unwrap() {
-        let _ = p.fatal("expected token `,`");
+    let cx_expr = panictry!(p.parse_expr());
+    if !panictry!(p.eat(&token::Comma)) {
+        let _ = p.diagnostic().fatal("expected token `,`");
     }
 
-    let tts = p.parse_all_token_trees().ok().unwrap();
+    let tts = panictry!(p.parse_all_token_trees());
     p.abort_if_errors();
 
     (cx_expr, tts)

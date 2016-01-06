@@ -14,9 +14,9 @@ use syntax::ext::base::ExtCtxt;
 use syntax::ext::expand;
 use syntax::feature_gate::GatedCfgAttr;
 use syntax::parse;
-use syntax::print::pprust;
-use syntax::owned_slice::OwnedSlice;
 use syntax::print::pprust::PrintState;
+use syntax::print::pprust;
+use syntax::ptr::P;
 
 use aster::name::ToName;
 
@@ -235,7 +235,7 @@ fn test_quote_with_generics_and_where_clause() {
                     span: syntax::codemap::DUMMY_SP,
                     bound_lifetimes: vec![],
                     bounded_ty: builder.ty().id("T"),
-                    bounds: OwnedSlice::from_vec(vec![
+                    bounds: P::from_vec(vec![
                         ast::TraitTyParamBound(
                             ast::PolyTraitRef {
                                 bound_lifetimes: vec![],

@@ -10,9 +10,11 @@
 
 #![cfg_attr(not(feature = "with-syntex"), feature(rustc_private))]
 
+#[macro_use]
 #[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
 
+#[macro_use]
 #[cfg(not(feature = "with-syntex"))]
 extern crate syntax;
 
@@ -327,24 +329,6 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
                                          self.cfg(),
                                          self.parse_sess())
     }
-}
-
-// A variant of 'try!' that panics on an Err. This is used as a crutch on the
-// way towards a non-panic!-prone parser. It should be used for fatal parsing
-// errors; eventually we plan to convert all code using panictry to just use
-// normal try.
-macro_rules! panictry {
-    ($e:expr) => ({
-        use std::result::Result::{Ok, Err};
-        use syntax::errors::FatalError;
-        match $e {
-            Ok(e) => e,
-            Err(mut e) => {
-                e.emit();
-                panic!(FatalError);
-            }
-        }
-    })
 }
 
 pub fn parse_expr_panic(parser: &mut Parser) -> P<ast::Expr> {
