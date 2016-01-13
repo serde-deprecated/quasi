@@ -1,6 +1,6 @@
 [package]
 name = "quasi_tests"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
@@ -8,11 +8,11 @@ repository = "https://github.com/erickt/rust-quasi"
 build = "build.rs"
 
 [build-dependencies]
-quasi_codegen = { version = "*", path = "../quasi_codegen" }
-syntex = { version = "^0.25.0" }
+quasi_codegen = { path = "../quasi_codegen" }
+syntex = { version = "^0.26.0" }
 
 [dev-dependencies]
-aster = { version = "^0.9.3", features = ["with-syntex"] }
-quasi = { version = "*", path = "../quasi", features = ["with-syntex"] }
-syntex = { version = "^0.25.0" }
-syntex_syntax = { version = "^0.25.0" }
+aster = { version = "^0.10.0", features = ["with-syntex"] }
+quasi = { path = "../quasi", features = ["with-syntex"] }
+syntex = { version = "^0.26.0" }
+syntex_syntax = { version = "^0.26.0" }
