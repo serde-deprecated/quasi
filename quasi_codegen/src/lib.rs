@@ -226,13 +226,6 @@ fn mk_name<T>(builder: &aster::AstBuilder, name: T) -> P<ast::Expr>
         .build()
 }
 
-fn mk_ast_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
-    builder.expr().path()
-        .global()
-        .ids(&["syntax", "ast", name])
-        .build()
-}
-
 fn mk_tt_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
     builder.expr().path()
         .global()
@@ -473,7 +466,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
 
             let e_to_toks = builder.expr().call()
                 .build_path(to_tokens)
-                .arg().addr_of().id(ident)
+                .arg().ref_().id(ident)
                 .arg().id("ext_cx")
                 .build();
 
@@ -544,9 +537,13 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
             };
 
             let e_op = match seq.op {
-                ast::ZeroOrMore => mk_ast_path(&builder, "ZeroOrMore"),
-                ast::OneOrMore => mk_ast_path(&builder, "OneOrMore"),
+                ast::KleeneOp::ZeroOrMore => "ZeroOrMore",
+                ast::KleeneOp::OneOrMore => "OneOrMore",
             };
+            let e_op = builder.expr().path()
+                .global()
+                .ids(&["syntax", "ast", "KleeneOp", e_op])
+                .build();
 
             let e_seq_struct = builder.expr().struct_()
                 .global().ids(&["syntax", "ast", "SequenceRepetition"]).build()
@@ -669,7 +666,7 @@ fn expand_wrapper(sp: Span,
 
     // Explicitly borrow to avoid moving from the invoker (#16992)
     let cx_expr_borrow = builder.expr()
-        .addr_of().build_deref(cx_expr);
+        .ref_().build_deref(cx_expr);
 
     let stmt_let_ext_cx = builder.stmt().let_id("ext_cx")
         .build(cx_expr_borrow);
@@ -715,7 +712,7 @@ fn expand_parse_call(cx: &ExtCtxt,
 
     let expr = builder.expr().call()
         .build_path(parse_method_path)
-        .arg().mut_addr_of().build(new_parser_call)
+        .arg().mut_ref().build(new_parser_call)
         .with_args(arg_exprs)
         .build();
 
