@@ -1,6 +1,6 @@
 [package]
 name = "quasi_codegen"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
