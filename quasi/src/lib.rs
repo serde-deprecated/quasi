@@ -140,10 +140,10 @@ impl ToTokens for ast::WhereClause {
     }
 }
 
-impl ToTokens for P<ast::Stmt> {
+impl ToTokens for ast::Stmt {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
         let mut tts = vec![
-            ast::TokenTree::Token(self.span, token::Interpolated(token::NtStmt(self.clone())))
+            ast::TokenTree::Token(self.span, token::Interpolated(token::NtStmt(P(self.clone()))))
         ];
 
         // Some statements require a trailing semicolon.
@@ -219,7 +219,8 @@ impl ToTokens for ast::Attribute {
 
 impl ToTokens for str {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-        let lit = ast::LitKind::Str(
+        let lit
+         = ast::LitKind::Str(
             token::intern_and_get_ident(self), ast::StrStyle::Cooked);
         dummy_spanned(lit).to_tokens(cx)
     }
@@ -299,7 +300,7 @@ impl_to_tokens_int! { unsigned, u64,  ast::UintTy::U64 }
 pub trait ExtParseUtils {
     fn parse_item(&self, s: String) -> P<ast::Item>;
     fn parse_expr(&self, s: String) -> P<ast::Expr>;
-    fn parse_stmt(&self, s: String) -> P<ast::Stmt>;
+    fn parse_stmt(&self, s: String) -> ast::Stmt;
     fn parse_tts(&self, s: String) -> Vec<ast::TokenTree>;
 }
 
@@ -313,7 +314,7 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
             self.parse_sess()).expect("parse error")
     }
 
-    fn parse_stmt(&self, s: String) -> P<ast::Stmt> {
+    fn parse_stmt(&self, s: String) -> ast::Stmt {
         parse::parse_stmt_from_source_str("<quote expansion>".to_string(),
                                           s,
                                           self.cfg(),
@@ -355,7 +356,7 @@ pub fn parse_ty_panic(parser: &mut Parser) -> P<ast::Ty> {
         panictry!(parser.parse_ty())
 }
 
-pub fn parse_stmt_panic(parser: &mut Parser) -> Option<P<ast::Stmt>> {
+pub fn parse_stmt_panic(parser: &mut Parser) -> Option<ast::Stmt> {
     panictry!(parser.parse_stmt())
 }
 

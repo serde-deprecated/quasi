@@ -450,7 +450,7 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
     }
 }
 
-fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<P<ast::Stmt>> {
+fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
     let builder = aster::AstBuilder::new();
 
     match *tt {
@@ -594,7 +594,7 @@ fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[ast::TokenTree])
     (cx_expr, tts)
 }
 
-fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<P<ast::Stmt>> {
+fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<ast::Stmt> {
     // We also bind a single value, sp, to ext_cx.call_site()
     //
     // This causes every span in a token-tree quote to be attributed to the
@@ -636,7 +636,7 @@ fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<P<ast::Stmt>> {
     vec!(stmt_let_sp, stmt_let_tt)
 }
 
-fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Vec<P<ast::Stmt>> {
+fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Vec<ast::Stmt> {
     let mut ss = Vec::new();
     for tt in tts {
         ss.extend(statements_mk_tt(tt, matcher).into_iter());
