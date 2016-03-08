@@ -27,7 +27,7 @@ extern crate syntax;
 extern crate rustc_plugin;
 
 use syntax::ast;
-use syntax::codemap::Span;
+use syntax::codemap::{Span, respan};
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::base;
 use syntax::parse::token::*;
@@ -456,7 +456,7 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
 
 struct QuoteStmts {
     stmts: Vec<ast::Stmt>,
-    idents: Vec<ast::Ident>,
+    idents: Vec<ast::SpannedIdent>,
 }
 
 fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
@@ -490,7 +490,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
 
             Ok(QuoteStmts {
                 stmts: vec![builder.stmt().build_expr(e_push)],
-                idents: vec![ident],
+                idents: vec![respan(sp, ident)],
             })
         }
         ref tt @ ast::TokenTree::Token(_, MatchNt(..)) if !matcher => {
@@ -595,26 +595,27 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             if idents.is_empty() {
                 return Err(());
             }
-
+            let builder = builder.clone().span(sp);
             let one_or_more = builder.expr().bool(seq.op == ast::KleeneOp::OneOrMore);
             let mut iter = idents.iter().cloned();
             let first = iter.next().unwrap();
-            let mut zipped = builder.expr()
+            let mut zipped = builder.span(first.span).expr()
                 .method_call("into_wrapped_iter")
-                    .id(first)
+                    .id(first.node)
                 .build();
-            let mut pat = builder.pat().id(first);
+            let mut pat = builder.span(first.span).pat().id(first.node);
             for ident in iter {
                 // Repeating calls to zip_wrap:
                 // $zipped.zip_wrap($ident.into_wrapped_iter())
                 zipped = builder.expr()
                     .method_call("zip_wrap")
                         .build(zipped)
-                        .arg().method_call("into_wrapped_iter")
-                            .id(ident)
+                        .arg().span(ident.span).method_call("into_wrapped_iter")
+                            .id(ident.node)
                         .build()
                     .build();
-                pat = builder.pat().tuple().with_pat(pat).pat().id(ident).build();
+                let span = ident.span;
+                pat = builder.pat().tuple().with_pat(pat).pat().span(span).id(ident.node).build();
             }
             // Assertion: zipped iterators must have at least one element
             // if one_or_more == `true`.
