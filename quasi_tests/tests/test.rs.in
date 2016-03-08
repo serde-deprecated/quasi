@@ -277,3 +277,129 @@ fn test_stmt_semicolons() {
         $stmts
     }).ok().unwrap();
 }
+
+#[test]
+fn test_sequence_repetitions() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+
+    let mut exprs = Vec::new();
+    exprs.push(quote_expr!(&cx, 1 + 2));
+    exprs.push(quote_expr!(&cx, 2 * 3));
+    let exprs = exprs.into_iter();
+
+    let expr = quote_expr!(&cx,
+        ( $($exprs),* )
+    );
+
+    assert_eq!(pprust::expr_to_string(&expr), "(1 + 2, 2 * 3)");
+}
+
+#[test]
+fn test_zipped_sequence_repetitions_with_lockstep_iter() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+
+    let a: Vec<i32> = vec![1, 2, 3];
+    let b: Vec<i32> = vec![11, 22, 33];
+    let a = a.into_iter();
+    let b = b.into_iter();
+
+    let expr = quote_expr!(&cx,
+        ( $($a + $b),* )
+    );
+
+    assert_eq!(pprust::expr_to_string(&expr), "(1i32 + 11i32, 2i32 + 22i32, 3i32 + 33i32)");
+}
+
+#[test]
+fn test_sequence_repetition_impls() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+
+    let mut exprs = Vec::new();
+    exprs.push(quote_expr!(&cx, 1 + 2));
+    exprs.push(quote_expr!(&cx, 2 * 3));
+    let exprs2 = vec![exprs.iter(); 2].into_iter();
+    let exprs = exprs.iter();
+    let mut stmts = Vec::new();
+    stmts.push(quote_stmt!(&cx, let x = 1;).unwrap());
+    stmts.push(quote_stmt!(&cx, let y = 2;).unwrap());
+    let stmts = vec![stmts.iter(); 2].into_iter();
+    let unit = ();
+
+
+    let expr = quote_expr!(&cx,
+        ( $($unit, { $($stmts; $exprs2;)+ }, $exprs,)+ )
+    );
+
+    assert_eq!(pprust::expr_to_string(&expr),
+               "((), { let x = 1; 1 + 2; let y = 2; 2 * 3; }, 1 + 2, (),\n \
+                     { let x = 1; 1 + 2; let y = 2; 2 * 3; }, 2 * 3)");
+}
+
+#[test]
+fn test_repeat_once() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+    let a = vec![1].into_iter();
+    let b = vec![1].into_iter();
+    let c = vec![1].into_iter();
+
+    let expr = quote_expr!(&cx,
+        ( $($a, $b, $c),+ )
+    );
+    assert_eq!(pprust::expr_to_string(&expr), "(1i32, 1i32, 1i32)");
+}
+
+#[test]
+#[should_panic]
+fn test_fail_unbounded_repetition() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+    let unit = ();
+
+    quote_expr!(&cx,
+        ( $($unit, ),* )
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_fail_repetition_different_lengths() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+    let a = 0..5;
+    let b = 0..10;
+
+    quote_expr!(&cx,
+        ( $($a, $b),* )
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_fail_zero_length_repetition() {
+    let sess = parse::ParseSess::new();
+    let mut feature_gated_cfgs = Vec::new();
+    let cx = make_ext_ctxt(&sess, &mut feature_gated_cfgs);
+
+    let a: Vec<i32> = vec![];
+    let a = a.into_iter();
+
+    quote_expr!(&cx,
+        ( $($a),+ )
+    );
+}
