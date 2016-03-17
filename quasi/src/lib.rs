@@ -124,19 +124,28 @@ impl ToTokens for P<ast::TraitItem> {
 
 impl ToTokens for ast::Generics {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        /*
+        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtGenerics(self.clone())))]
+        */
+
         let s = pprust::generics_to_string(self);
 
-        parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess())
+        panictry!(parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess()))
     }
 }
 
 impl ToTokens for ast::WhereClause {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        /*
+        vec![TokenTree::Token(DUMMY_SP,
+                              token::Interpolated(token::NtWhereClause(self.clone())))]
+        */
+
         let s = pprust::to_string(|s| {
             s.print_where_clause(&self)
         });
 
-        parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess())
+        panictry!(parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess()))
     }
 }
 
@@ -307,32 +316,35 @@ pub trait ExtParseUtils {
 impl<'a> ExtParseUtils for ExtCtxt<'a> {
 
     fn parse_item(&self, s: String) -> P<ast::Item> {
-        parse::parse_item_from_source_str(
+        panictry!(parse::parse_item_from_source_str(
             "<quote expansion>".to_string(),
             s,
             self.cfg(),
-            self.parse_sess()).expect("parse error")
+            self.parse_sess())).expect("parse error")
     }
 
     fn parse_stmt(&self, s: String) -> ast::Stmt {
-        parse::parse_stmt_from_source_str("<quote expansion>".to_string(),
-                                          s,
-                                          self.cfg(),
-                                          self.parse_sess()).expect("parse error")
+        panictry!(parse::parse_stmt_from_source_str(
+            "<quote expansion>".to_string(),
+            s,
+            self.cfg(),
+            self.parse_sess())).expect("parse error")
     }
 
     fn parse_expr(&self, s: String) -> P<ast::Expr> {
-        parse::parse_expr_from_source_str("<quote expansion>".to_string(),
-                                          s,
-                                          self.cfg(),
-                                          self.parse_sess())
+        panictry!(parse::parse_expr_from_source_str(
+            "<quote expansion>".to_string(),
+            s,
+            self.cfg(),
+            self.parse_sess()))
     }
 
     fn parse_tts(&self, s: String) -> Vec<ast::TokenTree> {
-        parse::parse_tts_from_source_str("<quote expansion>".to_string(),
-                                         s,
-                                         self.cfg(),
-                                         self.parse_sess())
+        panictry!(parse::parse_tts_from_source_str(
+            "<quote expansion>".to_string(),
+            s,
+            self.cfg(),
+            self.parse_sess()))
     }
 }
 
