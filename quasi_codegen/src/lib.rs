@@ -27,7 +27,7 @@ extern crate syntax;
 extern crate rustc_plugin;
 
 use syntax::ast;
-use syntax::codemap::Span;
+use syntax::codemap::{Span, respan};
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::base;
 use syntax::parse::token::*;
@@ -119,7 +119,11 @@ fn expand_quote_matcher<'cx>(
 
     let (cx_expr, tts) = parse_arguments_to_quote(cx, tts);
     let mut vector = mk_stmts_let(&builder);
-    vector.extend(statements_mk_tts(&tts[..], true).into_iter());
+    match statements_mk_tts(&tts[..], true) {
+        Ok(stmts) => vector.extend(stmts.stmts.into_iter()),
+        Err(_) => cx.span_fatal(sp, "attempted to repeat an expression containing \
+                                     no syntax variables matched as repeating at this depth"),
+    }
 
     let block = builder.expr().block()
         .with_stmts(vector)
@@ -450,7 +454,12 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
     }
 }
 
-fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
+struct QuoteStmts {
+    stmts: Vec<ast::Stmt>,
+    idents: Vec<ast::SpannedIdent>,
+}
+
+fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
     let builder = aster::AstBuilder::new();
 
     match *tt {
@@ -479,7 +488,10 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
                 .with_arg(e_to_toks)
                 .build();
 
-            vec![builder.stmt().build_expr(e_push)]
+            Ok(QuoteStmts {
+                stmts: vec![builder.stmt().build_expr(e_push)],
+                idents: vec![respan(sp, ident)],
+            })
         }
         ref tt @ ast::TokenTree::Token(_, MatchNt(..)) if !matcher => {
             let mut seq = vec![];
@@ -502,20 +514,21 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
                 .with_arg(e_tok)
                 .build();
 
-            vec![builder.stmt().build_expr(e_push)]
+            Ok(QuoteStmts {
+                stmts: vec![builder.stmt().build_expr(e_push)],
+                idents: vec![],
+            })
         },
         ast::TokenTree::Delimited(_, ref delimed) => {
-            statements_mk_tt(&delimed.open_tt(), matcher).into_iter()
-                .chain(delimed.tts.iter()
-                                  .flat_map(|tt| statements_mk_tt(tt, matcher).into_iter()))
-                .chain(statements_mk_tt(&delimed.close_tt(), matcher).into_iter())
-                .collect()
+            let delimited = try!(statements_mk_tts(&delimed.tts[..], matcher));
+            let open = try!(statements_mk_tt(&delimed.open_tt(), matcher)).stmts.into_iter();
+            let close = try!(statements_mk_tt(&delimed.close_tt(), matcher)).stmts.into_iter();
+            Ok(QuoteStmts {
+                stmts: open.chain(delimited.stmts.into_iter()).chain(close).collect(),
+                idents: delimited.idents,
+            })
         },
-        ast::TokenTree::Sequence(sp, ref seq) => {
-            if !matcher {
-                panic!("TokenTree::Sequence in quote!");
-            }
-
+        ast::TokenTree::Sequence(sp, ref seq) if matcher => {
             let builder = builder.clone().span(sp);
 
             let e_sp = builder.expr().id("_sp");
@@ -525,7 +538,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
                 .expr().vec().build();
 
             let mut tts_stmts = vec![stmt_let_tt];
-            tts_stmts.extend(statements_mk_tts(&seq.tts[..], matcher).into_iter());
+            tts_stmts.extend(try!(statements_mk_tts(&seq.tts[..], matcher)).stmts.into_iter());
 
             let e_tts = builder.expr().block()
                 .with_stmts(tts_stmts)
@@ -566,7 +579,86 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Vec<ast::Stmt> {
                 .arg().build(e_tok)
                 .build();
 
-            vec![builder.stmt().expr().build(e_push)]
+            Ok(QuoteStmts {
+                stmts: vec![builder.stmt().expr().build(e_push)],
+                idents: vec![],
+            })
+        }
+        ast::TokenTree::Sequence(sp, ref seq) => {
+            // Repeating fragments in a loop:
+            // for (...(a, b), ...) in a.into_wrapped_iter()
+            //                          .zip_wrap(b.into_wrapped_iter())...
+            //                          .check(true/false) {
+            //     // (quasiquotation with $a, $b, ...)
+            //}
+            let QuoteStmts { mut stmts, idents } = try!(statements_mk_tts(&seq.tts[..], matcher));
+            if idents.is_empty() {
+                return Err(());
+            }
+            let builder = builder.clone().span(sp);
+            let one_or_more = builder.expr().bool(seq.op == ast::KleeneOp::OneOrMore);
+            let mut iter = idents.iter().cloned();
+            let first = iter.next().unwrap();
+            let mut zipped = builder.span(first.span).expr()
+                .method_call("into_wrapped_iter")
+                    .id(first.node)
+                .build();
+            let mut pat = builder.span(first.span).pat().id(first.node);
+            for ident in iter {
+                // Repeating calls to zip_wrap:
+                // $zipped.zip_wrap($ident.into_wrapped_iter())
+                zipped = builder.expr()
+                    .method_call("zip_wrap")
+                        .build(zipped)
+                        .arg().span(ident.span).method_call("into_wrapped_iter")
+                            .id(ident.node)
+                        .build()
+                    .build();
+                let span = ident.span;
+                pat = builder.pat().tuple().with_pat(pat).pat().span(span).id(ident.node).build();
+            }
+            // Assertion: zipped iterators must have at least one element
+            // if one_or_more == `true`.
+            zipped = builder.expr()
+                .method_call("check")
+                    .build(zipped)
+                    .with_arg(one_or_more)
+                .build();
+            // Repetition can have a separator.
+            if let Some(ref tok) = seq.separator {
+                // Add the separator after each iteration.
+                let sep_token = ast::TokenTree::Token(sp, tok.clone());
+                let mk_sep = try!(statements_mk_tt(&sep_token, false));
+                stmts.extend(mk_sep.stmts.into_iter());
+            }
+
+            let stmt_for = builder.stmt().expr().build_expr_kind(
+                ast::ExprKind::ForLoop(pat, zipped, builder.block().with_stmts(stmts).build(), None)
+            );
+
+            let stmts_for = if seq.separator.is_some() {
+                // Pop the last occurence of the separator after the last iteration
+                // only if there was at least one iteration (which changes the number of tokens).
+                let tt_len = builder.expr().method_call("len").id("tt").build();
+                let tt_len_id = token::gensym_ident("tt_len");
+                let cond = builder.expr().ne().build(tt_len.clone()).id(tt_len_id);
+                let then = builder.block()
+                        .stmt().semi().method_call("pop").id("tt").build()
+                    .build();
+                let if_len_eq = builder.expr().build_expr_kind(
+                    ast::ExprKind::If(cond, then, None)
+                );
+                vec![builder.stmt().let_id(tt_len_id).build(tt_len),
+                     stmt_for,
+                     builder.stmt().build_expr(if_len_eq)]
+            } else {
+                vec![stmt_for]
+            };
+
+            Ok(QuoteStmts {
+                stmts: stmts_for,
+                idents: idents.clone(),
+            })
         }
     }
 }
@@ -636,12 +728,14 @@ fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<ast::Stmt> {
     vec!(stmt_let_sp, stmt_let_tt)
 }
 
-fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Vec<ast::Stmt> {
-    let mut ss = Vec::new();
+fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Result<QuoteStmts, ()> {
+    let mut ret = QuoteStmts { stmts: vec![], idents: vec![] };
     for tt in tts {
-        ss.extend(statements_mk_tt(tt, matcher).into_iter());
+        let QuoteStmts { stmts, idents } = try!(statements_mk_tt(tt, matcher));
+        ret.stmts.extend(stmts.into_iter());
+        ret.idents.extend(idents.into_iter());
     }
-    ss
+    Ok(ret)
 }
 
 fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
@@ -651,8 +745,18 @@ fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
     let (cx_expr, tts) = parse_arguments_to_quote(cx, tts);
 
     let mut vector = mk_stmts_let(&builder);
-    vector.extend(statements_mk_tts(&tts[..], false).into_iter());
+
+    match statements_mk_tts(&tts[..], false) {
+        Ok(stmts) => vector.extend(stmts.stmts.into_iter()),
+        Err(_) => cx.span_fatal(sp, "attempted to repeat an expression containing \
+                                     no syntax variables matched as repeating at this depth"),
+    }
+
     let block = builder.expr().block()
+        .stmt().item().attr().allow(&["unused_imports"])
+                      .use_().ids(&["quasi", "IntoWrappedIterator"]).build().build()
+        .stmt().item().attr().allow(&["unused_imports"])
+                      .use_().ids(&["quasi", "IntoWrappedRepeat"]).build().build()
         .with_stmts(vector)
         .expr().id("tt");
 

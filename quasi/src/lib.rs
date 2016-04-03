@@ -18,7 +18,10 @@ extern crate syntex_syntax as syntax;
 #[cfg(not(feature = "with-syntex"))]
 extern crate syntax;
 
+use std::iter;
+use std::marker;
 use std::rc::Rc;
+use std::usize;
 
 use syntax::ast::{self, TokenTree};
 use syntax::codemap::{DUMMY_SP, Spanned, dummy_spanned};
@@ -270,8 +273,21 @@ impl ToTokens for char {
     }
 }
 
+macro_rules! impl_wrap_repeat {
+    ($t:ty) => (
+        impl IntoWrappedRepeat for $t {
+            type Item = $t;
+            type IntoIter = iter::Repeat<$t>;
+            fn into_wrappable_iter(self) -> iter::Repeat<$t> {
+                iter::repeat(self)
+            }
+        }
+    )
+}
+
 macro_rules! impl_to_tokens_int {
     (signed, $t:ty, $tag:expr) => (
+        impl_wrap_repeat! { $t }
         impl ToTokens for $t {
             fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
                 let val = if *self < 0 {
@@ -285,6 +301,7 @@ macro_rules! impl_to_tokens_int {
         }
     );
     (unsigned, $t:ty, $tag:expr) => (
+        impl_wrap_repeat! { $t }
         impl ToTokens for $t {
             fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
                 let lit = ast::LitKind::Int(*self as u64, ast::LitIntType::Unsigned($tag));
@@ -375,3 +392,164 @@ pub fn parse_stmt_panic(parser: &mut Parser) -> Option<ast::Stmt> {
 pub fn parse_attribute_panic(parser: &mut Parser, permit_inner: bool) -> ast::Attribute {
         panictry!(parser.parse_attribute(permit_inner))
 }
+
+pub struct IterWrapper<I> {
+    inner: I,
+    require_nonempty: bool,
+    is_repeat: bool,
+}
+
+impl<I> IterWrapper<I> where I: Iterator {
+    pub fn zip_wrap<J>(self, other: IterWrapper<J>) -> IterWrapper<ZipLockstep<I, J>> {
+        IterWrapper {
+            inner: ZipLockstep {
+                a: self.inner,
+                b: other.inner,
+                contains_repeat: self.is_repeat || other.is_repeat,
+            },
+            require_nonempty: false,
+            is_repeat: self.is_repeat && other.is_repeat,
+        }
+    }
+
+    pub fn check(mut self, one_or_more: bool) -> Self {
+        // This check prevents running out of memory.
+        assert!(self.size_hint() != (usize::MAX, None),
+                "unbounded repetition in quasiquotation");
+        self.require_nonempty = one_or_more;
+        self
+    }
+}
+
+impl<T, I: Iterator<Item=T>> Iterator for IterWrapper<I> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        match self.inner.next() {
+            Some(elem) => {
+                self.require_nonempty = false;
+                Some(elem)
+            }
+            None => {
+                assert!(!self.require_nonempty,
+                        "a fragment must repeat at least once in quasiquotation");
+                None
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+pub struct ZipLockstep<A, B> {
+    a: A,
+    b: B,
+    contains_repeat: bool,
+}
+
+impl<A, B> Iterator for ZipLockstep<A, B>
+    where A: Iterator,
+          B: Iterator,
+{
+    type Item = (A::Item, B::Item);
+    fn next(&mut self) -> Option<Self::Item> {
+        match (self.a.next(), self.b.next()) {
+            (Some(left), Some(right)) => Some((left, right)),
+            (None, None) => None,
+            _ => {
+                if self.contains_repeat {
+                    None
+                } else {
+                    panic!("incorrect lockstep iteration in quasiquotation");
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        struct SizeHint<A>((usize, Option<usize>), marker::PhantomData<A>);
+        impl<A> Iterator for SizeHint<A> {
+            type Item = A;
+            fn next(&mut self) -> Option<A> { None }
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                ((self.0).0, (self.0).1)
+            }
+        }
+        let a_size_hint = SizeHint(self.a.size_hint(), marker::PhantomData::<()>);
+        let b_size_hint = SizeHint(self.b.size_hint(), marker::PhantomData::<()>);
+        a_size_hint.zip(b_size_hint).size_hint()
+    }
+}
+
+// This is a workaround for trait coherence.
+// Both traits have almost identical methods. We can generate code that calls
+// `into_wrapper_iter` on a value that should implement one of these traits,
+// without knowing which.
+
+pub trait IntoWrappedIterator: Sized {
+    type Item;
+    type IntoIter: Iterator<Item=Self::Item>;
+    fn into_wrappable_iter(self) -> Self::IntoIter;
+    fn into_wrapped_iter(self) -> IterWrapper<Self::IntoIter> {
+        IterWrapper {
+            inner: self.into_wrappable_iter(),
+            require_nonempty: false,
+            is_repeat: false,
+        }
+    }
+}
+
+pub trait IntoWrappedRepeat: Sized {
+    type Item;
+    type IntoIter: Iterator<Item=Self::Item>;
+    fn into_wrappable_iter(self) -> Self::IntoIter;
+    fn into_wrapped_iter(self) -> IterWrapper<Self::IntoIter> {
+        IterWrapper {
+            inner: self.into_wrappable_iter(),
+            require_nonempty: false,
+            // The iterator repeats an element.
+            is_repeat: true,
+        }
+    }
+}
+
+// Can't write a blanket impl for IntoIterator, because P<T> impls
+// IntoIterator, and P<T> may already impl IntoWrappedRepeat.
+impl<I: Iterator> IntoWrappedIterator for I {
+    type Item = I::Item;
+    type IntoIter = I;
+    fn into_wrappable_iter(self) -> I {
+        self
+    }
+}
+
+impl<T: Clone> IntoWrappedRepeat for Spanned<T> {
+    type Item = Spanned<T>;
+    type IntoIter = iter::Repeat<Spanned<T>>;
+    fn into_wrappable_iter(self) -> iter::Repeat<Spanned<T>> {
+        iter::repeat(self)
+    }
+}
+
+impl_wrap_repeat! { TokenTree }
+impl_wrap_repeat! { ast::Ident }
+impl_wrap_repeat! { ast::Path }
+impl_wrap_repeat! { ast::Ty }
+impl_wrap_repeat! { P<ast::Ty> }
+impl_wrap_repeat! { P<ast::Block> }
+impl_wrap_repeat! { P<ast::Item> }
+impl_wrap_repeat! { P<ast::ImplItem> }
+impl_wrap_repeat! { P<ast::TraitItem> }
+impl_wrap_repeat! { ast::Generics }
+impl_wrap_repeat! { ast::WhereClause }
+impl_wrap_repeat! { ast::StmtKind }
+impl_wrap_repeat! { P<ast::Expr> }
+impl_wrap_repeat! { P<ast::Pat> }
+impl_wrap_repeat! { ast::Arm }
+impl_wrap_repeat! { P<ast::MetaItem> }
+impl_wrap_repeat! { ast::Attribute_ }
+impl_wrap_repeat! { () }
+impl_wrap_repeat! { ast::LitKind }
+impl_wrap_repeat! { bool }
+impl_wrap_repeat! { char }
