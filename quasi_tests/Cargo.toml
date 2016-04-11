@@ -9,10 +9,10 @@ build = "build.rs"
 
 [build-dependencies]
 quasi_codegen = { path = "../quasi_codegen" }
-syntex = { version = "^0.30.0" }
+syntex = { version = "^0.31.0" }
 
 [dev-dependencies]
-aster = { version = "^0.14.0", features = ["with-syntex"] }
+aster = { version = "^0.15.0", features = ["with-syntex"] }
 quasi = { path = "../quasi", features = ["with-syntex"] }
-syntex = { version = "^0.30.0" }
-syntex_syntax = { version = "^0.30.0" }
+syntex = { version = "^0.31.0" }
+syntex_syntax = { version = "^0.31.0" }
