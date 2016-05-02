@@ -362,16 +362,10 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
                 builder.expr().usize(n))
         }
 
-        token::Ident(ident, style) => {
-            let style = match style {
-                ModName => mk_token_path(builder, "ModName"),
-                Plain   => mk_token_path(builder, "Plain"),
-            };
-
+        token::Ident(ident) => {
             builder.expr().call()
                 .build(mk_token_path(builder, "Ident"))
                 .with_arg(mk_ident(builder, ident))
-                .with_arg(style)
                 .build()
         }
 
@@ -426,23 +420,11 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
                 .build()
         }
 
-        token::MatchNt(name, kind, namep, kindp) => {
-            let namep = match namep {
-                ModName => mk_token_path(builder, "ModName"),
-                Plain => mk_token_path(builder, "Plain"),
-            };
-
-            let kindp = match kindp {
-                ModName => mk_token_path(builder, "ModName"),
-                Plain => mk_token_path(builder, "Plain"),
-            };
-
+        token::MatchNt(name, kind) => {
             builder.expr().call()
                 .build(mk_token_path(builder, "MatchNt"))
                 .arg().build(mk_ident(builder, name))
                 .arg().build(mk_ident(builder, kind))
-                .arg().build(namep)
-                .arg().build(kindp)
                 .build()
         }
 
@@ -463,7 +445,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
     let builder = aster::AstBuilder::new();
 
     match *tt {
-        ast::TokenTree::Token(sp, SubstNt(ident, _)) => {
+        ast::TokenTree::Token(sp, SubstNt(ident)) => {
             // tt.extend($ident.to_tokens(ext_cx).into_iter())
 
             let builder = builder.clone().span(sp);
