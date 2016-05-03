@@ -79,7 +79,7 @@ impl<T: ToTokens> ToTokens for Option<T> {
 
 impl ToTokens for ast::Ident {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![ast::TokenTree::Token(DUMMY_SP, token::Ident(*self, token::Plain))]
+        vec![ast::TokenTree::Token(DUMMY_SP, token::Ident(*self))]
     }
 }
 
