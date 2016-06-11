@@ -1,18 +1,19 @@
 [package]
 name = "quasi_macros"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
 repository = "https://github.com/erickt/rust-quasi"
+include = ["Cargo.toml", "src/**/*.rs"]
 
 [lib]
 name = "quasi_macros"
 plugin = true
 
 [dependencies]
-quasi_codegen = { version = "^0.11.0", path = "../quasi_codegen", default-features = false }
+quasi_codegen = { version = "^0.12.0", path = "../quasi_codegen", default-features = false }
 
 [dev-dependencies]
-aster = "^0.17.0"
-quasi = { version = "^0.11.0", path = "../quasi" }
+aster = "^0.18.0"
+quasi = { version = "^0.12.0", path = "../quasi" }
