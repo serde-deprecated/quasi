@@ -26,6 +26,12 @@ extern crate syntax;
 #[cfg(not(feature = "with-syntex"))]
 extern crate rustc_plugin;
 
+#[cfg(feature = "with-syntex")]
+use std::io;
+
+#[cfg(feature = "with-syntex")]
+use std::path::Path;
+
 use syntax::ast;
 use syntax::codemap::{Span, respan};
 use syntax::ext::base::ExtCtxt;
@@ -806,7 +812,17 @@ fn expand_parse_call(cx: &ExtCtxt,
 }
 
 #[cfg(feature = "with-syntex")]
-pub fn register(reg: &mut syntex::Registry) {
+pub fn expand<S, D>(src: S, dst: D) -> io::Result<()>
+    where S: AsRef<Path>,
+          D: AsRef<Path>,
+{
+    let mut registry = syntex::Registry::new();
+    register(&mut registry);
+    registry.expand("", src.as_ref(), dst.as_ref())
+}
+
+#[cfg(feature = "with-syntex")]
+fn register(reg: &mut syntex::Registry) {
     reg.add_macro("quote_tokens", expand_quote_tokens);
     reg.add_macro("quote_ty", expand_quote_ty);
     reg.add_macro("quote_expr", expand_quote_expr);
