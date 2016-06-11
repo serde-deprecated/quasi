@@ -80,7 +80,7 @@ fn expand_quote_expr<'cx>(
 }
 
 fn expand_quote_stmt<'cx>(
-    cx: &mut ExtCtxt,
+    cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
 ) -> Box<base::MacResult + 'cx> {
@@ -176,7 +176,7 @@ fn expand_quote_block<'cx>(
 }
 
 fn expand_quote_item<'cx>(
-    cx: &mut ExtCtxt,
+    cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
 ) -> Box<base::MacResult + 'cx> {
