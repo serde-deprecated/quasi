@@ -27,9 +27,6 @@ extern crate syntax;
 extern crate rustc_plugin;
 
 #[cfg(feature = "with-syntex")]
-use std::io;
-
-#[cfg(feature = "with-syntex")]
 use std::path::Path;
 
 use syntax::ast;
@@ -812,7 +809,7 @@ fn expand_parse_call(cx: &ExtCtxt,
 }
 
 #[cfg(feature = "with-syntex")]
-pub fn expand<S, D>(src: S, dst: D) -> io::Result<()>
+pub fn expand<S, D>(src: S, dst: D) -> Result<(), syntex::Error>
     where S: AsRef<Path>,
           D: AsRef<Path>,
 {
