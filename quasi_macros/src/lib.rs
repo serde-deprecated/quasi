@@ -9,6 +9,8 @@
 // except according to those terms.
 
 #![feature(plugin_registrar, unboxed_closures, rustc_private)]
+#![cfg_attr(feature = "unstable-testing", feature(plugin))]
+#![cfg_attr(feature = "unstable-testing", plugin(clippy))]
 
 extern crate quasi_codegen;
 extern crate rustc_plugin;

@@ -9,6 +9,8 @@
 // except according to those terms.
 
 #![cfg_attr(not(feature = "with-syntex"), feature(rustc_private))]
+#![cfg_attr(feature = "unstable-testing", feature(plugin))]
+#![cfg_attr(feature = "unstable-testing", plugin(clippy))]
 
 #[macro_use]
 #[cfg(feature = "with-syntex")]
@@ -70,9 +72,9 @@ impl<T: ToTokens> ToTokens for Spanned<T> {
 
 impl<T: ToTokens> ToTokens for Option<T> {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-        match self {
-            &Some(ref t) => t.to_tokens(cx),
-            &None => Vec::new(),
+        match *self {
+            Some(ref t) => t.to_tokens(cx),
+            None => Vec::new(),
         }
     }
 }
@@ -145,7 +147,7 @@ impl ToTokens for ast::WhereClause {
         */
 
         let s = pprust::to_string(|s| {
-            s.print_where_clause(&self)
+            s.print_where_clause(self)
         });
 
         panictry!(parse_tts_from_source_str("<quote expansion>".to_string(), s, cx.cfg(), cx.parse_sess()))

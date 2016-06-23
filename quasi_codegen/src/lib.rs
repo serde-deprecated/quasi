@@ -9,6 +9,8 @@
 // except according to those terms.
 
 #![cfg_attr(not(feature = "with-syntex"), feature(rustc_private))]
+#![cfg_attr(feature = "unstable-testing", feature(plugin))]
+#![cfg_attr(feature = "unstable-testing", plugin(clippy))]
 
 extern crate aster;
 
@@ -41,7 +43,7 @@ use syntax::ptr::P;
 ///
 ///  This is registered as a set of expression syntax extension called quote!
 ///  that lifts its argument token-tree to an AST representing the
-///  construction of the same token tree, with token::SubstNt interpreted
+///  construction of the same token tree, with `token::SubstNt` interpreted
 ///  as antiquotes (splices).
 
 fn expand_quote_tokens<'cx>(
@@ -451,7 +453,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
         ast::TokenTree::Token(sp, SubstNt(ident)) => {
             // tt.extend($ident.to_tokens(ext_cx).into_iter())
 
-            let builder = builder.clone().span(sp);
+            let builder = builder.span(sp);
 
             let to_tokens = builder.path()
                 .global()
@@ -486,7 +488,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             statements_mk_tts(&seq[..], matcher)
         }
         ast::TokenTree::Token(sp, ref tok) => {
-            let builder = builder.clone().span(sp);
+            let builder = builder.span(sp);
 
             let e_tok = builder.expr().call()
                 .build(mk_tt_path(&builder, "Token"))
@@ -514,7 +516,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             })
         },
         ast::TokenTree::Sequence(sp, ref seq) if matcher => {
-            let builder = builder.clone().span(sp);
+            let builder = builder.span(sp);
 
             let e_sp = builder.expr().id("_sp");
 
@@ -580,7 +582,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             if idents.is_empty() {
                 return Err(());
             }
-            let builder = builder.clone().span(sp);
+            let builder = builder.span(sp);
             let one_or_more = builder.expr().bool(seq.op == ast::KleeneOp::OneOrMore);
             let mut iter = idents.iter().cloned();
             let first = iter.next().unwrap();
