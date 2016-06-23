@@ -16,40 +16,20 @@ addons:
     - libdw-dev
 
 before_script:
-- |
-    pip install 'travis-cargo<0.2' --user &&
-    export PATH=$HOME/.local/bin:$PATH
-
+- pip install 'travis-cargo<0.2' --user
+- export PATH=$HOME/.local/bin:$PATH
 
 script:
-  - |
-    (
-    cd quasi &&
-    travis-cargo build -- --features with-syntex &&
-    travis-cargo test -- --features with-syntex &&
-    travis-cargo --only nightly build &&
-    travis-cargo --only nightly test &&
-    travis-cargo doc -- --features with-syntex
-    )
-  - |
-    (
-    cd quasi_macros &&
-    travis-cargo --only nightly build &&
-    travis-cargo --only nightly test
-    )
-  - |
-    (
-    cd quasi_tests &&
-    travis-cargo build &&
-    travis-cargo test
-    )
+- (cd quasi && travis-cargo --skip nightly test -- --features with-syntex)
+- (cd quasi && travis-cargo doc -- --features with-syntex)
+- (cd quasi && travis-cargo --only nightly test -- --features "with-syntex unstable-testing")
+- (cd quasi && travis-cargo --only nightly test -- --features unstable-testing)
+- (cd quasi_macros && travis-cargo --only nightly test -- --features unstable-testing)
+- (cd quasi_tests && travis-cargo --skip nightly test)
+- (cd quasi_tests && travis-cargo --only nightly test -- --features unstable-testing)
 
 after_success:
-  - |
-    (
-    cd quasi_tests &&
-    travis-cargo --only stable coveralls --no-sudo
-    )
+- (cd quasi_tests && travis-cargo --only stable coveralls --no-sudo)
 
 env:
   global:
