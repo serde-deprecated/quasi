@@ -16,15 +16,17 @@ extern crate aster;
 
 #[cfg(feature = "with-syntex")]
 extern crate syntex;
-
 #[macro_use]
 #[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
+#[cfg(feature = "with-syntex")]
+extern crate syntex_errors as errors;
 
 #[macro_use]
 #[cfg(not(feature = "with-syntex"))]
 extern crate syntax;
-
+#[cfg(not(feature = "with-syntex"))]
+extern crate rustc_errors as errors;
 #[cfg(not(feature = "with-syntex"))]
 extern crate rustc_plugin;
 
@@ -38,6 +40,7 @@ use syntax::ext::base;
 use syntax::parse::token::*;
 use syntax::parse::token;
 use syntax::ptr::P;
+use syntax::tokenstream::{self, TokenTree};
 
 ///  Quasiquoting works via token trees.
 ///
@@ -49,7 +52,7 @@ use syntax::ptr::P;
 fn expand_quote_tokens<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree],
+    tts: &[TokenTree],
 ) -> Box<base::MacResult + 'cx> {
     let (cx_expr, expr) = expand_tts(cx, sp, tts);
     let expanded = expand_wrapper(sp, cx_expr, expr);
@@ -59,7 +62,7 @@ fn expand_quote_tokens<'cx>(
 fn expand_quote_ty<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -73,7 +76,7 @@ fn expand_quote_ty<'cx>(
 fn expand_quote_expr<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -87,7 +90,7 @@ fn expand_quote_expr<'cx>(
 fn expand_quote_stmt<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -101,7 +104,7 @@ fn expand_quote_stmt<'cx>(
 fn expand_quote_attr<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let builder = aster::AstBuilder::new().span(sp);
 
@@ -118,7 +121,7 @@ fn expand_quote_attr<'cx>(
 fn expand_quote_matcher<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let builder = aster::AstBuilder::new().span(sp);
 
@@ -141,7 +144,7 @@ fn expand_quote_matcher<'cx>(
 fn expand_quote_pat<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -155,7 +158,7 @@ fn expand_quote_pat<'cx>(
 fn expand_quote_arm<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -169,7 +172,7 @@ fn expand_quote_arm<'cx>(
 fn expand_quote_block<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -183,7 +186,7 @@ fn expand_quote_block<'cx>(
 fn expand_quote_item<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -197,7 +200,7 @@ fn expand_quote_item<'cx>(
 fn expand_quote_impl_item<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<base::MacResult + 'cx> {
     let expanded = expand_parse_call(
         cx,
@@ -211,7 +214,7 @@ fn expand_quote_impl_item<'cx>(
 /*
 fn expand_quote_where_clause<'cx>(cx: &mut ExtCtxt,
                                       sp: Span,
-                                      tts: &[ast::TokenTree])
+                                      tts: &[TokenTree])
                                       -> Box<base::MacResult+'cx> {
     let expanded = expand_parse_call(cx, sp, "parse_where_clause",
                                     vec!(), tts);
@@ -238,7 +241,7 @@ fn mk_name<T>(builder: &aster::AstBuilder, name: T) -> P<ast::Expr>
 fn mk_tt_path(builder: &aster::AstBuilder, name: &str) -> P<ast::Expr> {
     builder.expr().path()
         .global()
-        .ids(&["syntax", "ast", "TokenTree", name])
+        .ids(&["syntax", "tokenstream", "TokenTree", name])
         .build()
 }
 
@@ -446,11 +449,11 @@ struct QuoteStmts {
     idents: Vec<ast::SpannedIdent>,
 }
 
-fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
+fn statements_mk_tt(tt: &TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
     let builder = aster::AstBuilder::new();
 
     match *tt {
-        ast::TokenTree::Token(sp, SubstNt(ident)) => {
+        TokenTree::Token(sp, SubstNt(ident)) => {
             // tt.extend($ident.to_tokens(ext_cx).into_iter())
 
             let builder = builder.span(sp);
@@ -480,14 +483,14 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
                 idents: vec![respan(sp, ident)],
             })
         }
-        ref tt @ ast::TokenTree::Token(_, MatchNt(..)) if !matcher => {
+        ref tt @ TokenTree::Token(_, MatchNt(..)) if !matcher => {
             let mut seq = vec![];
             for i in 0..tt.len() {
                 seq.push(tt.get_tt(i));
             }
             statements_mk_tts(&seq[..], matcher)
         }
-        ast::TokenTree::Token(sp, ref tok) => {
+        TokenTree::Token(sp, ref tok) => {
             let builder = builder.span(sp);
 
             let e_tok = builder.expr().call()
@@ -506,7 +509,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
                 idents: vec![],
             })
         },
-        ast::TokenTree::Delimited(_, ref delimed) => {
+        TokenTree::Delimited(_, ref delimed) => {
             let delimited = try!(statements_mk_tts(&delimed.tts[..], matcher));
             let open = try!(statements_mk_tt(&delimed.open_tt(), matcher)).stmts.into_iter();
             let close = try!(statements_mk_tt(&delimed.close_tt(), matcher)).stmts.into_iter();
@@ -515,7 +518,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
                 idents: delimited.idents,
             })
         },
-        ast::TokenTree::Sequence(sp, ref seq) if matcher => {
+        TokenTree::Sequence(sp, ref seq) if matcher => {
             let builder = builder.span(sp);
 
             let e_sp = builder.expr().id("_sp");
@@ -537,29 +540,26 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             };
 
             let e_op = match seq.op {
-                ast::KleeneOp::ZeroOrMore => "ZeroOrMore",
-                ast::KleeneOp::OneOrMore => "OneOrMore",
+                tokenstream::KleeneOp::ZeroOrMore => "ZeroOrMore",
+                tokenstream::KleeneOp::OneOrMore => "OneOrMore",
             };
             let e_op = builder.expr().path()
                 .global()
-                .ids(&["syntax", "ast", "KleeneOp", e_op])
+                .ids(&["syntax", "tokenstream", "KleeneOp", e_op])
                 .build();
 
             let e_seq_struct = builder.expr().struct_()
-                .global().ids(&["syntax", "ast", "SequenceRepetition"]).build()
+                .global().ids(&["syntax", "tokenstream", "SequenceRepetition"]).build()
                 .field("tts").build(e_tts)
                 .field("separator").build(e_separator)
                 .field("op").build(e_op)
                 .field("num_captures").usize(seq.num_captures)
                 .build();
 
-            let e_rc_new = builder.expr().rc()
-                .build(e_seq_struct);
-
             let e_tok = builder.expr().call()
                 .build(mk_tt_path(&builder, "Sequence"))
                 .arg().build(e_sp)
-                .arg().build(e_rc_new)
+                .arg().build(e_seq_struct)
                 .build();
 
             let e_push = builder.expr().method_call("push").id("tt")
@@ -571,7 +571,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
                 idents: vec![],
             })
         }
-        ast::TokenTree::Sequence(sp, ref seq) => {
+        TokenTree::Sequence(sp, ref seq) => {
             // Repeating fragments in a loop:
             // for (...(a, b), ...) in a.into_wrapped_iter()
             //                          .zip_wrap(b.into_wrapped_iter())...
@@ -583,7 +583,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
                 return Err(());
             }
             let builder = builder.span(sp);
-            let one_or_more = builder.expr().bool(seq.op == ast::KleeneOp::OneOrMore);
+            let one_or_more = builder.expr().bool(seq.op == tokenstream::KleeneOp::OneOrMore);
             let mut iter = idents.iter().cloned();
             let first = iter.next().unwrap();
             let mut zipped = builder.span(first.span).expr()
@@ -614,7 +614,7 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
             // Repetition can have a separator.
             if let Some(ref tok) = seq.separator {
                 // Add the separator after each iteration.
-                let sep_token = ast::TokenTree::Token(sp, tok.clone());
+                let sep_token = TokenTree::Token(sp, tok.clone());
                 let mk_sep = try!(statements_mk_tt(&sep_token, false));
                 stmts.extend(mk_sep.stmts.into_iter());
             }
@@ -650,8 +650,8 @@ fn statements_mk_tt(tt: &ast::TokenTree, matcher: bool) -> Result<QuoteStmts, ()
     }
 }
 
-fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[ast::TokenTree])
-                            -> (P<ast::Expr>, Vec<ast::TokenTree>) {
+fn parse_arguments_to_quote(cx: &ExtCtxt, tts: &[TokenTree])
+                            -> (P<ast::Expr>, Vec<TokenTree>) {
     // NB: It appears that the main parser loses its mind if we consider
     // $foo as a SubstNt during the main parse, so we have to re-parse
     // under quote_depth > 0. This is silly and should go away; the _guess_ is
@@ -715,7 +715,7 @@ fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<ast::Stmt> {
     vec!(stmt_let_sp, stmt_let_tt)
 }
 
-fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Result<QuoteStmts, ()> {
+fn statements_mk_tts(tts: &[TokenTree], matcher: bool) -> Result<QuoteStmts, ()> {
     let mut ret = QuoteStmts { stmts: vec![], idents: vec![] };
     for tt in tts {
         let QuoteStmts { stmts, idents } = try!(statements_mk_tt(tt, matcher));
@@ -725,7 +725,7 @@ fn statements_mk_tts(tts: &[ast::TokenTree], matcher: bool) -> Result<QuoteStmts
     Ok(ret)
 }
 
-fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[ast::TokenTree])
+fn expand_tts(cx: &ExtCtxt, sp: Span, tts: &[TokenTree])
               -> (P<ast::Expr>, P<ast::Expr>) {
     let builder = aster::AstBuilder::new().span(sp);
 
@@ -771,7 +771,7 @@ fn expand_parse_call(cx: &ExtCtxt,
                      sp: Span,
                      parse_method: &[&str],
                      arg_exprs: Vec<P<ast::Expr>> ,
-                     tts: &[ast::TokenTree]) -> P<ast::Expr> {
+                     tts: &[TokenTree]) -> P<ast::Expr> {
     let builder = aster::AstBuilder::new().span(sp);
 
     let (cx_expr, tts_expr) = expand_tts(cx, sp, tts);
