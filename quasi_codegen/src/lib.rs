@@ -556,10 +556,13 @@ fn statements_mk_tt(tt: &TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
                 .field("num_captures").usize(seq.num_captures)
                 .build();
 
+            let e_rc_new = builder.expr().rc()
+                .build(e_seq_struct);
+
             let e_tok = builder.expr().call()
                 .build(mk_tt_path(&builder, "Sequence"))
                 .arg().build(e_sp)
-                .arg().build(e_seq_struct)
+                .arg().build(e_rc_new)
                 .build();
 
             let e_push = builder.expr().method_call("push").id("tt")
