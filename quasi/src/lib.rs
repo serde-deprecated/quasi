@@ -26,6 +26,7 @@ extern crate rustc_errors as errors;
 
 use std::iter;
 use std::marker;
+use std::rc::Rc;
 use std::usize;
 
 use syntax::ast;
@@ -226,12 +227,12 @@ impl ToTokens for ast::Attribute {
         if self.node.style == ast::AttrStyle::Inner {
             r.push(TokenTree::Token(self.span, token::Not));
         }
-        r.push(TokenTree::Delimited(self.span, tokenstream::Delimited {
+        r.push(TokenTree::Delimited(self.span, Rc::new(tokenstream::Delimited {
             delim: token::Bracket,
             open_span: self.span,
             tts: self.node.value.to_tokens(cx),
             close_span: self.span,
-        }));
+        })));
         r
     }
 }
@@ -247,12 +248,12 @@ impl ToTokens for str {
 
 impl ToTokens for () {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Delimited(DUMMY_SP, tokenstream::Delimited {
+        vec![TokenTree::Delimited(DUMMY_SP, Rc::new(tokenstream::Delimited {
             delim: token::Paren,
             open_span: DUMMY_SP,
             tts: vec![],
             close_span: DUMMY_SP,
-        })]
+        }))]
     }
 }
 
