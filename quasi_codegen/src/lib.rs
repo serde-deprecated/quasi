@@ -273,6 +273,7 @@ fn mk_delim(builder: &aster::AstBuilder, delim: token::DelimToken) -> P<ast::Exp
         token::Paren     => "Paren",
         token::Bracket   => "Bracket",
         token::Brace     => "Brace",
+        token::NoDelim   => "NoDelim",
     };
     mk_token_path(builder, name)
 }
