@@ -47,11 +47,6 @@ script:
 after_success:
   - |
     (
-    cd quasi &&
-    travis-cargo --only stable doc-upload
-    )
-  - |
-    (
     cd quasi_tests &&
     travis-cargo --only stable coveralls --no-sudo
     )
@@ -60,6 +55,3 @@ env:
   global:
     # override the default `--features unstable` used for the nightly branch (optional)
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-
-    # encrypted github token for doc upload (see `GH_TOKEN` link above)
-    - secure: VdytY7YA8W4q146sMv7vc7G8UBSmEtQC4NImNicffnXXVu/ghbKu+/6knmjDc97mjiz7AdredJzE/lUI3Np9PqONvtMFv8Mzcbcm0vglybIFxEGgNz82dr9wzZ6UnWZu1vULGVnKi1N2sXwYsourEex6Ec4rp89vXshQxYV58tI=
