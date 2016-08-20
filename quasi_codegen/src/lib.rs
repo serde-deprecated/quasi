@@ -819,9 +819,14 @@ pub fn expand<S, D>(src: S, dst: D) -> Result<(), syntex::Error>
     where S: AsRef<Path>,
           D: AsRef<Path>,
 {
-    let mut registry = syntex::Registry::new();
-    register(&mut registry);
-    registry.expand("", src.as_ref(), dst.as_ref())
+    let src = src.as_ref().to_owned();
+    let dst = dst.as_ref().to_owned();
+
+    syntex::with_extra_stack(move || {
+        let mut registry = syntex::Registry::new();
+        register(&mut registry);
+        registry.expand("", src, dst)
+    })
 }
 
 #[cfg(feature = "with-syntex")]
