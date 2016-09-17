@@ -246,6 +246,15 @@ impl ToTokens for str {
     }
 }
 
+impl ToTokens for String {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        let lit
+         = ast::LitKind::Str(
+            token::intern_and_get_ident(self), ast::StrStyle::Cooked);
+        dummy_spanned(lit).to_tokens(cx)
+    }
+}
+
 impl ToTokens for () {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
         vec![TokenTree::Delimited(DUMMY_SP, Rc::new(tokenstream::Delimited {
