@@ -10,7 +10,7 @@
 
 use syntax::ast;
 use syntax::codemap;
-use syntax::ext::base::{DummyMacroLoader, ExtCtxt};
+use syntax::ext::base::{DummyResolver, ExtCtxt};
 use syntax::ext::expand;
 use syntax::parse;
 use syntax::print::pprust::PrintState;
@@ -20,7 +20,7 @@ use syntax::ptr::P;
 use aster::name::ToName;
 
 fn make_ext_ctxt<'a>(sess: &'a parse::ParseSess,
-                     macro_loader: &'a mut DummyMacroLoader) -> ExtCtxt<'a> {
+                     macro_loader: &'a mut DummyResolver) -> ExtCtxt<'a> {
     let info = codemap::ExpnInfo {
         call_site: codemap::DUMMY_SP,
         callee: codemap::NameAndSpan {
@@ -42,7 +42,7 @@ fn make_ext_ctxt<'a>(sess: &'a parse::ParseSess,
 #[test]
 fn test_quote_tokens() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let tts = quote_tokens!(&cx, (+ 2 3));
@@ -52,7 +52,7 @@ fn test_quote_tokens() {
 #[test]
 fn test_quote_ty() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let ty = quote_ty!(&cx, isize);
@@ -62,7 +62,7 @@ fn test_quote_ty() {
 #[test]
 fn test_quote_expr() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let expr = quote_expr!(&cx, 23);
@@ -76,7 +76,7 @@ fn test_quote_expr() {
 #[test]
 fn test_quote_stmt() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let stmt = quote_stmt!(&cx, let x = 20;).unwrap();
@@ -86,7 +86,7 @@ fn test_quote_stmt() {
 #[test]
 fn test_quote_pat() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let pat = quote_pat!(&cx, Some(_));
@@ -96,7 +96,7 @@ fn test_quote_pat() {
 #[test]
 fn test_quote_arm() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let arm = quote_arm!(&cx, (ref x, ref y) => (x, y),);
@@ -106,7 +106,7 @@ fn test_quote_arm() {
 #[test]
 fn test_quote_attr() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let attr = quote_attr!(&cx, #![cfg(foo = "bar")]);
@@ -118,7 +118,7 @@ fn test_quote_attr() {
 #[test]
 fn test_quote_block() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let block = quote_block!(&cx, {
@@ -135,7 +135,7 @@ fn test_quote_block() {
 #[test]
 fn test_quote_item() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let item = quote_item!(&cx, static x : int = 10;).unwrap();
@@ -145,7 +145,7 @@ fn test_quote_item() {
 #[test]
 fn test_quote_impl_item() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let impl_item = quote_impl_item!(&cx, fn method(&mut self, x: u32) -> u32 { x });
@@ -159,7 +159,7 @@ fn test_quote_impl_item() {
 #[test]
 fn test_quote_matcher() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let tts = quote_matcher!(&cx, $($foo:tt,)* bar);
@@ -170,7 +170,7 @@ fn test_quote_matcher() {
 #[test]
 fn test_quote_where_clause() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let where_clause = quote_where_clause!(&cx, where A, B: T).ok().unwrap();
@@ -185,7 +185,7 @@ fn test_quote_where_clause() {
 #[test]
 fn test_quote_with_macro() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let block = quote_block!(&cx, {
@@ -216,7 +216,7 @@ fn test_quote_with_macro() {
 #[test]
 fn test_quote_with_generics_and_where_clause() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let builder = aster::AstBuilder::new();
@@ -265,7 +265,7 @@ fn test_quote_with_generics_and_where_clause() {
 #[test]
 fn test_stmt_semicolons() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let mut stmts = Vec::new();
@@ -280,7 +280,7 @@ fn test_stmt_semicolons() {
 #[test]
 fn test_sequence_repetitions() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
 
@@ -299,7 +299,7 @@ fn test_sequence_repetitions() {
 #[test]
 fn test_zipped_sequence_repetitions_with_lockstep_iter() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
 
@@ -318,7 +318,7 @@ fn test_zipped_sequence_repetitions_with_lockstep_iter() {
 #[test]
 fn test_sequence_repetition_impls() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
 
@@ -346,7 +346,7 @@ fn test_sequence_repetition_impls() {
 #[test]
 fn test_repeat_once() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let a = vec![1].into_iter();
@@ -363,7 +363,7 @@ fn test_repeat_once() {
 #[should_panic]
 fn test_fail_unbounded_repetition() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let unit = ();
@@ -377,7 +377,7 @@ fn test_fail_unbounded_repetition() {
 #[should_panic]
 fn test_fail_repetition_different_lengths() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let a = 0..5;
@@ -392,7 +392,7 @@ fn test_fail_repetition_different_lengths() {
 #[should_panic]
 fn test_fail_zero_length_repetition() {
     let sess = parse::ParseSess::new();
-    let mut macro_loader = DummyMacroLoader;
+    let mut macro_loader = DummyResolver;
     let cx = make_ext_ctxt(&sess, &mut macro_loader);
 
     let a: Vec<i32> = vec![];
