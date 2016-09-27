@@ -639,9 +639,10 @@ fn statements_mk_tt(tt: &TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
                 let if_len_eq = builder.expr().build_expr_kind(
                     ast::ExprKind::If(cond, then, None)
                 );
-                vec![builder.stmt().let_id(tt_len_id).build(tt_len),
-                     stmt_for,
-                     builder.stmt().build_expr(if_len_eq)]
+                vec![
+                    builder.stmt().let_id(tt_len_id).build_expr(tt_len),
+                    stmt_for,
+                    builder.stmt().build_expr(if_len_eq)]
             } else {
                 vec![stmt_for]
             };
@@ -709,7 +710,7 @@ fn mk_stmts_let(builder: &aster::AstBuilder) -> Vec<ast::Stmt> {
         .build();
 
     let stmt_let_sp = builder.stmt()
-        .let_id("_sp").build(e_sp);
+        .let_id("_sp").build_expr(e_sp);
 
     let stmt_let_tt = builder.stmt().let_().mut_id("tt")
         .expr().call()
@@ -764,7 +765,7 @@ fn expand_wrapper(sp: Span,
         .ref_().build_deref(cx_expr);
 
     let stmt_let_ext_cx = builder.stmt().let_id("ext_cx")
-        .build(cx_expr_borrow);
+        .build_expr(cx_expr_borrow);
 
     builder.expr().block()
         .with_stmt(stmt_let_ext_cx)
