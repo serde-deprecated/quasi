@@ -8,13 +8,6 @@ rust:
   - beta
   - nightly
 
-addons:
-  apt:
-    packages:
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
-
 before_script:
 - pip install 'travis-cargo<0.2' --user
 - export PATH=$HOME/.local/bin:$PATH
@@ -27,9 +20,6 @@ script:
 - (cd quasi_macros && travis-cargo --only nightly test -- --features unstable-testing)
 - (cd quasi_tests && travis-cargo --skip nightly test)
 - (cd quasi_tests && travis-cargo --only nightly test -- --features unstable-testing)
-
-after_success:
-- (cd quasi_tests && travis-cargo --only stable coveralls --no-sudo)
 
 env:
   global:
