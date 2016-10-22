@@ -438,8 +438,7 @@ fn expr_mk_token(builder: &aster::AstBuilder, tok: &token::Token) -> P<ast::Expr
         }
 
         token::Interpolated(..)
-        | token::SubstNt(..)
-        | token::SpecialVarNt(..) => {
+        | token::SubstNt(..) => {
             panic!("quote! with {:?} token", tok)
         }
     }
@@ -781,8 +780,11 @@ fn expand_parse_call(cx: &ExtCtxt,
 
     let (cx_expr, tts_expr) = expand_tts(cx, sp, tts);
 
-    let cfg_call = builder.expr().method_call("cfg")
+    let cfg_call = builder.expr()
+        .method_call("clone")
+        .method_call("cfg")
         .id("ext_cx")
+        .build()
         .build();
 
     let parse_sess_call = builder.expr().method_call("parse_sess")
