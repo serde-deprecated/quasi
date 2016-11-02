@@ -144,7 +144,6 @@ impl ToTokens for ast::Generics {
         panictry!(parse_tts_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            cx.cfg().clone(),
             cx.parse_sess()))
     }
 }
@@ -163,7 +162,6 @@ impl ToTokens for ast::WhereClause {
         panictry!(parse_tts_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            cx.cfg().clone(),
             cx.parse_sess()))
     }
 }
@@ -361,7 +359,6 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
         panictry!(parse::parse_item_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            self.cfg().clone(),
             self.parse_sess())).expect("parse error")
     }
 
@@ -369,7 +366,6 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
         panictry!(parse::parse_stmt_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            self.cfg().clone(),
             self.parse_sess())).expect("parse error")
     }
 
@@ -377,7 +373,6 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
         panictry!(parse::parse_expr_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            self.cfg().clone(),
             self.parse_sess()))
     }
 
@@ -385,7 +380,6 @@ impl<'a> ExtParseUtils for ExtCtxt<'a> {
         panictry!(parse::parse_tts_from_source_str(
             "<quote expansion>".to_string(),
             s,
-            self.cfg().clone(),
             self.parse_sess()))
     }
 }
