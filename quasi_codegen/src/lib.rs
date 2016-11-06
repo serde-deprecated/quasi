@@ -780,13 +780,6 @@ fn expand_parse_call(cx: &ExtCtxt,
 
     let (cx_expr, tts_expr) = expand_tts(cx, sp, tts);
 
-    let cfg_call = builder.expr()
-        .method_call("clone")
-        .method_call("cfg")
-        .id("ext_cx")
-        .build()
-        .build();
-
     let parse_sess_call = builder.expr().method_call("parse_sess")
         .id("ext_cx")
         .build();
@@ -799,7 +792,6 @@ fn expand_parse_call(cx: &ExtCtxt,
     let new_parser_call = builder.expr().call()
         .build_path(new_parser_from_tts_path)
         .with_arg(parse_sess_call)
-        .with_arg(cfg_call)
         .with_arg(tts_expr)
         .build();
 
