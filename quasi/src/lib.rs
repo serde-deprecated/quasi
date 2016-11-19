@@ -93,43 +93,43 @@ impl ToTokens for ast::Ident {
 
 impl ToTokens for ast::Path {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtPath(Box::new(self.clone()))))]
+        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(token::NtPath(self.clone()))))]
     }
 }
 
 impl ToTokens for ast::Ty {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtTy(P(self.clone()))))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtTy(P(self.clone())))))]
     }
 }
 
 impl ToTokens for P<ast::Ty> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtTy(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtTy(self.clone()))))]
     }
 }
 
 impl ToTokens for P<ast::Block> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtBlock(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtBlock(self.clone()))))]
     }
 }
 
 impl ToTokens for P<ast::Item> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtItem(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtItem(self.clone()))))]
     }
 }
 
 impl ToTokens for P<ast::ImplItem> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtImplItem(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtImplItem((**self).clone()))))]
     }
 }
 
 impl ToTokens for P<ast::TraitItem> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtTraitItem(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtTraitItem((**self).clone()))))]
     }
 }
 
@@ -169,7 +169,7 @@ impl ToTokens for ast::WhereClause {
 impl ToTokens for ast::Stmt {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
         let mut tts = vec![
-            TokenTree::Token(self.span, token::Interpolated(token::NtStmt(P(self.clone()))))
+            TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtStmt(self.clone()))))
         ];
 
         // Some statements require a trailing semicolon.
@@ -183,19 +183,19 @@ impl ToTokens for ast::Stmt {
 
 impl ToTokens for P<ast::Expr> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtExpr(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtExpr(self.clone()))))]
     }
 }
 
 impl ToTokens for P<ast::Pat> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(self.span, token::Interpolated(token::NtPat(self.clone())))]
+        vec![TokenTree::Token(self.span, token::Interpolated(Rc::new(token::NtPat(self.clone()))))]
     }
 }
 
 impl ToTokens for ast::Arm {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtArm(self.clone())))]
+        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(token::NtArm(self.clone()))))]
     }
 }
 
@@ -221,7 +221,7 @@ impl_to_tokens_slice! { P<ast::Item>, [] }
 
 impl ToTokens for P<ast::MetaItem> {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
-        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(token::NtMeta(self.clone())))]
+        vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(token::NtMeta(self.clone()))))]
     }
 }
 
