@@ -225,6 +225,16 @@ impl ToTokens for P<ast::MetaItem> {
     }
 }
 
+impl ToTokens for ast::Arg {
+    fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
+        let mut v = self.pat.to_tokens(cx);
+        v.push(TokenTree::Token(DUMMY_SP, token::Colon));
+        v.extend(self.ty.to_tokens(cx));
+        v.push(TokenTree::Token(DUMMY_SP, token::Comma));
+        v
+    }
+}
+
 impl ToTokens for ast::Attribute {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         let mut r = vec![];
