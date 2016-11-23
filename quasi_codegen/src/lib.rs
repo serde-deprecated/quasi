@@ -40,6 +40,7 @@ use syntax::ext::base;
 use syntax::parse::token::*;
 use syntax::parse::token;
 use syntax::ptr::P;
+use syntax::symbol::Symbol;
 use syntax::tokenstream::{self, TokenTree};
 
 ///  Quasiquoting works via token trees.
@@ -231,7 +232,7 @@ fn mk_ident(builder: &aster::AstBuilder, ident: ast::Ident) -> P<ast::Expr> {
 
 // Lift a name to the expr that evaluates to that name
 fn mk_name<T>(builder: &aster::AstBuilder, name: T) -> P<ast::Expr>
-    where T: aster::str::ToInternedString,
+    where T: aster::symbol::ToSymbol
 {
     builder.expr().method_call("name_of").id("ext_cx")
         .arg().str(name)
@@ -630,7 +631,7 @@ fn statements_mk_tt(tt: &TokenTree, matcher: bool) -> Result<QuoteStmts, ()> {
                 // Pop the last occurence of the separator after the last iteration
                 // only if there was at least one iteration (which changes the number of tokens).
                 let tt_len = builder.expr().method_call("len").id("tt").build();
-                let tt_len_id = token::gensym_ident("tt_len");
+                let tt_len_id = Symbol::intern("tt_len");
                 let cond = builder.expr().ne().build(tt_len.clone()).id(tt_len_id);
                 let then = builder.block()
                         .stmt().semi().method_call("pop").id("tt").build()

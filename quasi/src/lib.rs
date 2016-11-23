@@ -36,6 +36,7 @@ use syntax::parse::parser::Parser;
 use syntax::parse::{self, classify, parse_tts_from_source_str, token};
 use syntax::print::pprust;
 use syntax::ptr::P;
+use syntax::symbol::Symbol;
 use syntax::tokenstream::{self, TokenTree};
 use syntax::util::ThinVec;
 
@@ -219,7 +220,7 @@ macro_rules! impl_to_tokens_slice {
 impl_to_tokens_slice! { ast::Ty, [TokenTree::Token(DUMMY_SP, token::Comma)] }
 impl_to_tokens_slice! { P<ast::Item>, [] }
 
-impl ToTokens for P<ast::MetaItem> {
+impl ToTokens for ast::MetaItem {
     fn to_tokens(&self, _cx: &ExtCtxt) -> Vec<TokenTree> {
         vec![TokenTree::Token(DUMMY_SP, token::Interpolated(Rc::new(token::NtMeta(self.clone()))))]
     }
@@ -230,13 +231,13 @@ impl ToTokens for ast::Attribute {
         let mut r = vec![];
         // FIXME: The spans could be better
         r.push(TokenTree::Token(self.span, token::Pound));
-        if self.node.style == ast::AttrStyle::Inner {
+        if self.style == ast::AttrStyle::Inner {
             r.push(TokenTree::Token(self.span, token::Not));
         }
         r.push(TokenTree::Delimited(self.span, Rc::new(tokenstream::Delimited {
             delim: token::Bracket,
             open_span: self.span,
-            tts: self.node.value.to_tokens(cx),
+            tts: self.value.to_tokens(cx),
             close_span: self.span,
         })));
         r
@@ -247,7 +248,7 @@ impl ToTokens for str {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         let lit
          = ast::LitKind::Str(
-            token::intern_and_get_ident(self), ast::StrStyle::Cooked);
+            Symbol::intern(self), ast::StrStyle::Cooked);
         dummy_spanned(lit).to_tokens(cx)
     }
 }
@@ -256,7 +257,7 @@ impl ToTokens for String {
     fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
         let lit
          = ast::LitKind::Str(
-            token::intern_and_get_ident(self), ast::StrStyle::Cooked);
+            Symbol::intern(self), ast::StrStyle::Cooked);
         dummy_spanned(lit).to_tokens(cx)
     }
 }
@@ -567,7 +568,7 @@ impl_wrap_repeat! { P<ast::Expr> }
 impl_wrap_repeat! { P<ast::Pat> }
 impl_wrap_repeat! { ast::Arm }
 impl_wrap_repeat! { P<ast::MetaItem> }
-impl_wrap_repeat! { ast::Attribute_ }
+impl_wrap_repeat! { ast::Attribute }
 impl_wrap_repeat! { () }
 impl_wrap_repeat! { ast::LitKind }
 impl_wrap_repeat! { bool }
