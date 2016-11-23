@@ -17,14 +17,14 @@ use syntax::print::pprust::PrintState;
 use syntax::print::pprust;
 use syntax::ptr::P;
 
-use aster::name::ToName;
+use aster::symbol::ToSymbol;
 
 fn make_ext_ctxt<'a>(sess: &'a parse::ParseSess,
                      macro_loader: &'a mut DummyResolver) -> ExtCtxt<'a> {
     let info = codemap::ExpnInfo {
         call_site: codemap::DUMMY_SP,
         callee: codemap::NameAndSpan {
-            format: codemap::MacroAttribute("test".to_name()),
+            format: codemap::MacroAttribute("test".to_symbol()),
             allow_internal_unstable: false,
             span: None
         }
