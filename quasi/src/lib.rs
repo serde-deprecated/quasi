@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private))]
+#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, i128_type))]
 #![cfg_attr(feature = "unstable-testing", feature(plugin))]
 #![cfg_attr(feature = "unstable-testing", plugin(clippy))]
 
@@ -309,6 +309,13 @@ macro_rules! impl_wrap_repeat {
     )
 }
 
+#[cfg(feature = "with-syntex")]
+#[allow(non_camel_case_types)]
+type umax = u64;
+#[cfg(not(feature = "with-syntex"))]
+#[allow(non_camel_case_types)]
+type umax = u128;
+
 macro_rules! impl_to_tokens_int {
     (signed, $t:ty, $tag:expr) => (
         impl_wrap_repeat! { $t }
@@ -319,7 +326,7 @@ macro_rules! impl_to_tokens_int {
                 } else {
                     *self
                 };
-                let lit = ast::LitKind::Int(val as u64, ast::LitIntType::Signed($tag));
+                let lit = ast::LitKind::Int(val as umax, ast::LitIntType::Signed($tag));
                 dummy_spanned(lit).to_tokens(cx)
             }
         }
@@ -328,7 +335,7 @@ macro_rules! impl_to_tokens_int {
         impl_wrap_repeat! { $t }
         impl ToTokens for $t {
             fn to_tokens(&self, cx: &ExtCtxt) -> Vec<TokenTree> {
-                let lit = ast::LitKind::Int(*self as u64, ast::LitIntType::Unsigned($tag));
+                let lit = ast::LitKind::Int(*self as umax, ast::LitIntType::Unsigned($tag));
                 dummy_spanned(lit).to_tokens(cx)
             }
         }
