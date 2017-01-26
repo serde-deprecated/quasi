@@ -1,11 +1,12 @@
 [package]
 name = "quasi_tests"
-version = "0.30.0"
+version = "0.0.0"
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A quasi-quoting macro system"
 repository = "https://github.com/serde-rs/quasi"
 build = "build.rs"
+publish = false
 
 [features]
 unstable-testing = ["clippy", "quasi/unstable-testing", "quasi_codegen/unstable-testing"]
