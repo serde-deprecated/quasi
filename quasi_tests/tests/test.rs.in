@@ -15,7 +15,6 @@ use syntax::ext::expand;
 use syntax::parse;
 use syntax::print::pprust::PrintState;
 use syntax::print::pprust;
-use syntax::ptr::P;
 
 use aster::symbol::ToSymbol;
 
@@ -233,7 +232,7 @@ fn test_quote_with_generics_and_where_clause() {
                     span: syntax::codemap::DUMMY_SP,
                     bound_lifetimes: vec![],
                     bounded_ty: builder.ty().id("T"),
-                    bounds: P::from_vec(vec![
+                    bounds: vec![
                         ast::TraitTyParamBound(
                             ast::PolyTraitRef {
                                 bound_lifetimes: vec![],
@@ -245,7 +244,7 @@ fn test_quote_with_generics_and_where_clause() {
                             },
                             ast::TraitBoundModifier::None,
                         ),
-                    ]),
+                    ],
                 }
             ),
         ],
